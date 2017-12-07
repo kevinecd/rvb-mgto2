@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+	<event name="catalog_product_save_after">
+        <observer name="reverb_product_save_after" instance="Reverb\ReverbSync\Observer\CatalogProductSaveAfter"/>
+    </event>
+    <event name="should_reverb_shipping_be_allowed">
+        <observer name="check_for_syncing_reverb_order" instance="Reverb\ReverbSync\Observer\checkForSyncingReverbOrderForShipping"/>
+    </event>
+    <event name="should_reverb_payment_be_allowed">
+        <observer name="check_for_syncing_reverb_order" instance="Reverb\ReverbSync\Observer\checkForSyncingReverbOrderForPayment"/>
+    </event>
+</config>
