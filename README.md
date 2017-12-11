@@ -8,7 +8,7 @@ Please read this entire README prior to installing the application.
 
 ## Features
 
-* Create new draft listings on Reverb from Magento products, including image & category sync
+* Create new draft listings on Reverb from Magento products, including image ~~& category sync~~ (category sync requires bugfix) 
 * Control whether price/title/inventory syncs individualy.
 * Sync updates for inventory from Magento to Reverb. 
 * Sync orders from Reverb to Magento
@@ -52,7 +52,7 @@ If you don't already have make & model fields in your magento installation, you 
 
 ## Installation: Part 1 - Install the App
 
-Please follow the instructions below to download and install the app. This assumes you have shell access to your server. If you have only FTP access, please download and unzip the app into /path/to/magento/htodcs/app
+Please follow the instructions below to download and install the app. This assumes you have shell access to your server. If you have only FTP access, please download and unzip the app into /path/to/magento/htodcs/app/code/
 
 ```bash
 # Where your magento lives. This is the only part you have to manually modify.
@@ -65,23 +65,31 @@ cd /tmp && wget https://github.com/reverbdotcom/magento/archive/0.9.8.tar.gz //t
 tar zxvf 0.9.8.tar.gz //this will depend on repo name
 
 # Copy everything from the app folder into your magento app
-rsync -avzp magento-0.9.8/app/* $MAGENTO_PATH/htdocs/app/
+rsync -avzp magento-0.9.8/* $MAGENTO_PATH/htdocs/app/code/
+
+# Update Magento 2 databse
+php bin/magento setup:upgrade
 
 # Clear your cache
-rm -rf $MAGENTO_PATH/htdocs/var/cache
+php bin/magento cache:flush
+php bin/magento cache:clean
 ```
 
 ## Installation: Part 2 - Install the Cron
 
-The cron is used to process the listing syncing queue. To see what's in your crontab, run `crontab -l`. Please ensure that your crontab contains one of the following lines:
-
-    * * * * * /bin/sh -c "php /path/to/magento/htdocs/cron.php -mdefault 1 > /path/to/magento/htdocs/var/log/cron.log"
-
+The cron is used to process the listing syncing queue. To see what's in your crontab, run `crontab -l`. Please ensure that your crontab contains one of the following examples:
+```bash
+* * * * * /usr/bin/php /path/to/magento/bin/magento cron:run | grep -v "Ran jobs by schedule" >> /path/to/magento/var/log/magento.cron.log
+* * * * * /usr/bin/php /path/to/magento/update/cron.php >> /var/www/magento2/var/log/update.cron.log
+* * * * * /usr/bin/php /path/to/magento/bin/magento setup:cron:run >> /var/www/magento2/var/log/setup.cron.log
+```
 or
 
-    * * * * *  /bin/sh -c "/path/to/magento/htdocs/cron.sh cron.php -mdefault 1 > /path/to/magento/htdocs/var/log/cron.log 2>&1"
+```bash
+* * * * * /usr/bin/php /path/to/magento/bin/magento cron:run | grep -v "Ran jobs by schedule" >> /path/to/magento/log/magento.cron.log
+```
 
-If your crontab does not contain either of these lines, please use `crontab -e` to edit it and copy the second line (`cron.sh`) into your crontab.
+If your crontab does not contain either of these examples, please use `crontab -e` to edit it and copy the second line (`cron.sh`) into your crontab.
 
 
 ## Installation: Part 3 - Configuration
