@@ -1,17 +1,10 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 10/27/15
- */
+namespace Reverb\ReverbSync\Model\Resource\Category\Magento\Reverb\Mapping;
 
-/**
- * This class has been deprecated and is no longer in use
- */
-class Reverb_ReverbSync_Model_Mysql4_Category_Magento_Reverb_Mapping_Collection
-    extends Mage_Core_Model_Mysql4_Collection_Abstract
+class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection
 {
     protected function _construct()
     {
-        $this->_init('reverbSync/category_magento_reverb_mapping');
+        $this->_init('Reverb\ReverbSync\Model\Category\Magento\Reverb\Mapping','Reverb\ReverbSync\Model\Resource\Category\Magento\Reverb\Mapping');
     }
 }

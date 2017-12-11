@@ -1,6 +1,6 @@
 <?php
-
-class Reverb_ReverbSync_Block_Adminhtml_Listings_Index extends Mage_Adminhtml_Block_Widget_Container
+namespace Reverb\ReverbSync\Block\Adminhtml\Listings;
+class Index extends \Magento\Backend\Block\Widget\Container
 {
     const LAST_EXECUTED_AT_TEMPLATE = '<h3>The last Reverb Listing Sync was executed at %s</h3>';
 

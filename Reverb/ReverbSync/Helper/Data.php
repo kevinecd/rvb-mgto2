@@ -100,7 +100,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
                 catch(Exception $e)
                 {
                     $listingWrapper->setReverbWebUrl($reverb_web_url);
-                    $error_message = $this->__(self::ERROR_LISTING_IMAGE_SYNC, $e->getMessage());
+                    $error_message = __(sprintf(self::ERROR_LISTING_IMAGE_SYNC, $e->getMessage()));
                     throw new Reverb_ReverbSync_Model_Exception_Listing_Image_Sync($error_message);
                 }
             }
@@ -366,20 +366,20 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
         if (!$this->_isStatusSuccessful($status))
         {
             $api_url = $curlResource->getOption(CURLOPT_URL);
-            $error_message = $this->__(self::ERROR_API_STATUS_NOT_OK, $status, $api_url, $content_body, $curl_error_message);
+            $error_message = __(sprintf(self::ERROR_API_STATUS_NOT_OK, $status, $api_url, $content_body, $curl_error_message));
             $this->_logErrorAndThrowException($error_message);
         }
         // Ensure that the response was not empty
         if (empty($response_as_json))
         {
-            $error_message = $this->__(self::ERROR_EMPTY_RESPONSE, $curl_error_message);
+            $error_message = __(sprintf(self::ERROR_EMPTY_RESPONSE, $curl_error_message));
             $this->_logErrorAndThrowException($error_message);
         }
         // Ensure that the response did not signal any errors occurred
         if (isset($response_as_array['errors']) && !empty($response_as_array['errors']))
         {
             $errors_as_string = json_encode($response_as_array['errors']);
-            $error_message = $this->__(self::ERROR_RESPONSE_ERROR, $errors_as_string, $curl_error_message);
+            $error_message = __(sprintf(self::ERROR_RESPONSE_ERROR, $errors_as_string, $curl_error_message));
             $this->_logErrorAndThrowException($error_message);
         }
 
@@ -411,8 +411,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
      */
     public function getExceptionObject($error_message)
     {
-        $exceptionObject = new Reverb_ReverbSync_Model_Exception_Api($error_message);
-        return $exceptionObject;
+        throw new \Exception($error_message);
     }
 
     /**
@@ -421,7 +420,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
      */
     public function logError($error_message)
     {
-        Mage::getSingleton('reverbSync/log')->logSyncError($error_message);
+        $this->_getLogSingleton()->logReverbMessage($error_message);
     }
 
     /**

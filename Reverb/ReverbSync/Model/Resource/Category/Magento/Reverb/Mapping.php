@@ -1,17 +1,11 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 10/27/15
- */
+namespace Reverb\ReverbSync\Model\Resource\Category\Magento\Reverb;
 
-/**
- * This class has been deprecated and is no longer in use
- */
-class Reverb_ReverbSync_Model_Mysql4_Category_Magento_Reverb_Mapping extends Mage_Core_Model_Mysql4_Abstract
+class Mapping extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
 {
     public function _construct()
     {
-        $this->_init('reverbSync/magento_reverb_category_mapping', 'xref_id');
+        $this->_init('reverb_magento_categories', 'xref_id');
     }
 
     /**

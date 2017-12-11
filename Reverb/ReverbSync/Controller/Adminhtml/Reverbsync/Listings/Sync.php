@@ -34,10 +34,18 @@ class Sync extends \Magento\Backend\App\Action{
     
     public function __construct(Context $context, PageFactory $resultPageFactory) {
         parent::__construct($context);
+        $this->_request = $context->getRequest();
         $this->resultPageFactory = $resultPageFactory;
     }
     public function execute(){
-        echo 'tesintonge ';exit; 
+        $action = $this->_request->getParam('action');
+        if($action=='clearAllTasks'){
+            $this->clearAllTasksAction();
+        } else if($action=='clearSuccessfulTasks'){
+            $this->clearSuccessfulTasksAction();
+        } else if($action=='stopBulkSync'){
+            $this->stopBulkSyncAction();
+        }
         /*$resultPage = $this->resultPageFactory->create();
         $resultPage->setActiveMenu('Reverb_ReverbSync::reverb_listings_sync');
         $resultPage->getConfig()->getTitle()->prepend((__('Reverb Listing Sync')));
@@ -59,14 +67,14 @@ class Sync extends \Magento\Backend\App\Action{
             // so that the Magento Front controller dispatch() method can handle redirect
             throw $redirectException;
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             // We don't know what caused this exception. Log it and throw redirect exception
-            $error_message = $this->__(self::BULK_SYNC_EXCEPTION, $e->getMessage());
+            $error_message = __(sprintf(self::BULK_SYNC_EXCEPTION, $e->getMessage()));
             $this->_getAdminHelper()->throwRedirectException($error_message, $this->_getRedirectPath());
         }
 
-        $success_message = $this->__(self::SUCCESS_BULK_SYNC_QUEUED_UP, $number_of_syncs_queued_up);
+        $success_message = __(sprintf(self::SUCCESS_BULK_SYNC_QUEUED_UP, $number_of_syncs_queued_up));
         $this->_getAdminHelper()->addAdminSuccessMessage($success_message);
         $this->_redirect($this->_getRedirectPath());
     }
@@ -84,14 +92,14 @@ class Sync extends \Magento\Backend\App\Action{
             // so that the Magento Front controller dispatch() method can handle redirect
             throw $redirectException;
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             // We don't know what caused this exception. Log it and throw redirect exception
-            $error_message = $this->__(self::EXCEPTION_STOP_BULK_SYNC, $e->getMessage());
+            $error_message = __(sprintf(self::EXCEPTION_STOP_BULK_SYNC, $e->getMessage()));
             $this->_getAdminHelper()->throwRedirectException($error_message, $this->_getRedirectPath());
         }
 
-        $success_message = $this->__(self::SUCCESS_STOPPED_LISTING_SYNCS);
+        $success_message = __(sprintf(self::SUCCESS_STOPPED_LISTING_SYNCS));
         $this->_getAdminHelper()->addAdminSuccessMessage($success_message);
         $this->_redirect($this->_getRedirectPath());
     }
@@ -103,13 +111,13 @@ class Sync extends \Magento\Backend\App\Action{
             $listing_sync_rows_deleted = Mage::helper('ReverbSync/sync_product')->deleteAllListingSyncTasks();
             $reverb_report_rows_deleted = Mage::helper('ReverbSync/sync_product')->deleteAllReverbReportRows();
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
-            $error_message = $this->__(self::EXCEPTION_CLEARING_ALL_LISTING_TASKS, $e->getMessage());
+            $error_message = __(sprintf(self::EXCEPTION_CLEARING_ALL_LISTING_TASKS, $e->getMessage()));
             $this->_getAdminHelper()->throwRedirectException($error_message, $this->_getRedirectPath());
         }
 
-        $success_message = $this->__(self::SUCCESS_CLEAR_LISTING_SYNCS);
+        $success_message = __(sprintf(self::SUCCESS_CLEAR_LISTING_SYNCS));
         $this->_getAdminHelper()->addAdminSuccessMessage($success_message);
         $this->_redirect($this->_getRedirectPath());
     }
@@ -122,13 +130,13 @@ class Sync extends \Magento\Backend\App\Action{
             $reverb_report_rows_deleted = Mage::getResourceSingleton('reverb_reports/reverbreport')
                                             ->deleteSuccessfulSyncs();
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
-            $error_message = $this->__(self::ERROR_CLEARING_SUCCESSFUL_SYNC, $e->getMessage());
+            $error_message = __(sprintf(self::ERROR_CLEARING_SUCCESSFUL_SYNC, $e->getMessage()));
             $this->_getAdminHelper()->throwRedirectException($error_message, $this->_getRedirectPath());
         }
 
-        $success_message = $this->__(self::SUCCESS_CLEAR_SUCCESSFUL_LISTING_SYNCS);
+        $success_message = __(sprintf(self::SUCCESS_CLEAR_SUCCESSFUL_LISTING_SYNCS));
         $this->_getAdminHelper()->addAdminSuccessMessage($success_message);
         $this->_redirect($this->_getRedirectPath());
     }

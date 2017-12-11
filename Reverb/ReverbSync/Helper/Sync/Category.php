@@ -71,15 +71,15 @@ class Category extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function processMagentoReverbCategoryMapping(array $reverb_magento_category_mapping)
     {
-        // Filter out all values in the array which are set to the NO_CATEGORY_CHOSEN_OPTION value
+
+	   // Filter out all values in the array which are set to the NO_CATEGORY_CHOSEN_OPTION value
         $defined_category_mapping
             = array_filter($reverb_magento_category_mapping,
-                             'Reverb_ReverbSync_Helper_Sync_Category::filter_out_no_category_chosen_option');
+                             'Reverb\ReverbSync\Helper\Sync\Category::filter_out_no_category_chosen_option');
 
         if (!empty($defined_category_mapping))
         {
-            Mage::getResourceSingleton('reverbSync/category_reverb_magento_xref')
-                ->redefineCategoryMapping($defined_category_mapping);
+            $this->_categoryMagentoXref->redefineCategoryMapping($defined_category_mapping);
         }
     }
 

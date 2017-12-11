@@ -134,7 +134,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended
     protected function _prepareCollection()
     {
         $store = $this->_getStore();
-        $collection = $this->_shipmentSyncCollection;
+        $collection = $this->_shipmentSyncCollection->addFieldToFilter('code','shipment_tracking_sync');
         $this->setCollection($collection);
         
         parent::_prepareCollection();
@@ -161,7 +161,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended
 				'align'     => 'left',
 				'index'     => 'unique_id',
 				//'renderer'  => 'ReverbSync/adminhtml_widget_grid_column_renderer_order_id',
-				'type'      => 'text'
+                'type'      => 'text'
 			]
 		);
 
@@ -182,7 +182,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended
 				'header'    => __('Sku'),
 				'align'     => 'left',
 				'type'      => 'text',
-				//'renderer'  => 'ReverbSync/adminhtml_widget_grid_column_renderer_order_product_sku',
+				'renderer'  => '\Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Product\Sku',
 				'filter'    => false,
 				'sortable'  => false
 			]
@@ -194,7 +194,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended
 				'header'    => __('Name'),
 				'align'     => 'left',
 				'type'      => 'text',
-				//'renderer'  => 'ReverbSync/adminhtml_widget_grid_column_renderer_order_product_name',
+				'renderer'  => '\Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Product\Name',
 				'filter'    => false,
 				'sortable'  => false
 			]

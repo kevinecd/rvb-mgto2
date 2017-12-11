@@ -1,11 +1,6 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 9/25/15
- */
-
-class Reverb_ReverbSync_Block_Adminhtml_Listings_Image_Unique_Index
-    extends Reverb_ProcessQueue_Block_Adminhtml_Unique_Index
+namespace Reverb\ReverbSync\Block\Adminhtml\Listings\Image\Unique;
+class Index extends \Reverb\ProcessQueue\Block\Adminhtml\Unique\Index
 {
     public function getTaskCodeToFilterBy()
     {

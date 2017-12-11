@@ -1,13 +1,25 @@
 <?php
 namespace Reverb\ReverbSync\Helper\Orders\Creation;
-class Currency
+class Currency extends \Magento\Payment\Model\Method\AbstractMethod
 {
     protected $_currencyModel = null;
+
+    protected $_code = 'reverbpayment';
+
+    protected $_scopeConfig;
+
+    public function __construct(
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        \Magento\CurrencySymbol\Model\System\Currencysymbol $currencySymbol
+    ) {
+        $this->_scopeConfig = $scopeConfig;
+        $this->_currencySymbol = $currencySymbol;
+    }
 
     public function isValidCurrencyCode($currency_code)
     {
         $allowed_currency_symbols_csv_list =
-            Mage::getStoreConfig(Mage_CurrencySymbol_Model_System_Currencysymbol::XML_PATH_ALLOWED_CURRENCIES);
+            $this->_scopeConfig->getValue(\Magento\CurrencySymbol\Model\System\Currencysymbol::XML_PATH_ALLOWED_CURRENCIES);
         $allowed_currency_symbols_array = explode(',', $allowed_currency_symbols_csv_list);
 
         return in_array($currency_code, $allowed_currency_symbols_array);
@@ -15,17 +27,12 @@ class Currency
 
     public function getDefaultCurrencyCode()
     {
-        $default_currency_code = Mage::getStoreConfig('currency/options/base');
+        $default_currency_code = $this->_scopeConfig->getValue('currency/options/base');
         return $default_currency_code;
     }
 
     protected function _getCurrencyModel()
     {
-        if (is_null($this->_currencyModel))
-        {
-            $this->_currencyModel = Mage::getModel('currencysymbol/system_currencysymbol');
-        }
-
-        return $this->_currencyModel;
+        return $this->_currencySymbol;
     }
 }

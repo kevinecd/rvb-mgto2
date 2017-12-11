@@ -1,10 +1,5 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 9/22/15
- */
 namespace Reverb\ReverbSync\Model\Sync\Shipment;
-
 class Tracking extends \Reverb\ProcessQueue\Model\Task
 {
     const ERROR_INSUFFICIENT_DATA = "Insufficient data is set on a queue task object for Reverb Shipment Tracking Sync:\nReverb_Order Id: %s\nCarrier Code: %s\nTracking Number: %s";
@@ -15,6 +10,26 @@ class Tracking extends \Reverb\ProcessQueue\Model\Task
 
     protected $_default_shipping_provider = 'Other';
 
+    protected $_taskResult;
+
+    protected $_datetime;
+
+    protected $_shipmentTrackingSync;
+
+    public function __construct(
+        \Reverb\ProcessQueue\Model\Task\Result $taskResult,
+        \Magento\Framework\Stdlib\DateTime\DateTime $datetime,
+        \Magento\Framework\Model\Context $context,
+        \Magento\Framework\Registry $registry,
+        \Reverb\ReverbSync\Helper\Shipment\Tracking\Sync $shipmentTrackingSync
+    ) {
+        $this->_registry = $registry;
+        $this->_taskResult = $taskResult;
+        $this->_datetime = $datetime;
+        $this->_shipmentTrackingSync = $shipmentTrackingSync;
+        parent::__construct($taskResult, $datetime, $context, $registry);
+    }
+
     protected $_carrier_code_to_provider_mapping = array(
         'fedex' => 'FedEx',
         'dhlint' => 'DHL',
@@ -24,7 +39,7 @@ class Tracking extends \Reverb\ProcessQueue\Model\Task
         'canada_post' => 'Canada Post',
     );
 
-    public function transmitTrackingDataToReverb(stdClass $argumentsObject)
+    public function transmitTrackingDataToReverb($argumentsObject)
     {
         try
         {
@@ -36,25 +51,22 @@ class Tracking extends \Reverb\ProcessQueue\Model\Task
             // Ensure that we have the necessary data for transmission
             if (empty($reverb_order_id) || empty($tracking_number) || empty($carrier_code))
             {
-                $error_message = Mage::helper('ReverbSync/shipment_data')
-                                    ->__(self::ERROR_INSUFFICIENT_DATA, $reverb_order_id, $carrier_code, $tracking_number);
-                throw new Reverb_ReverbSync_Model_Exception_Data_Shipment_Tracking($error_message);
+                $error_message = __(sprintf(self::ERROR_INSUFFICIENT_DATA, $reverb_order_id, $carrier_code, $tracking_number));
+                throw new \Reverb\ReverbSync\Model\Exception\Data\Shipment\Tracking($error_message);
             }
             $shipping_provider = $this->getReverbShippingProviderByMagentoCarrierCode($carrier_code);
 
-            $api_call_response = Mage::helper('ReverbSync/shipment_tracking_sync')
-                                    ->sendShipmentTrackingDataToReverb($reverb_order_id, $tracking_number,
-                                                                        $shipping_provider, $send_notification);
+            $api_call_response = $this->_shipmentTrackingSync->sendShipmentTrackingDataToReverb($reverb_order_id, $tracking_number,$shipping_provider, $send_notification);
         }
-        catch(Reverb_ReverbSync_Model_Exception_Data_Shipment_Tracking $e)
+        catch(\Reverb\ReverbSync\Model\Exception\Data\Shipment\Tracking $e)
         {
             // Since we have insufficient data to process an API call, do not try this queue task again
-            $error_message = Mage::helper('ReverbSync/shipment_data')->__(self::ERROR_SEND_TRACKING_DATA, $e->getMessage());
+            $error_message = __(sprintf(self::ERROR_SEND_TRACKING_DATA, $e->getMessage()));
             return $this->_returnAbortCallbackResult($error_message);
         }
         catch(Exception $e)
         {
-            $error_message = Mage::helper('ReverbSync/shipment_data')->__(self::ERROR_SEND_TRACKING_DATA, $e->getMessage());
+            $error_message = __(sprintf(self::ERROR_SEND_TRACKING_DATA, $e->getMessage()));
             return $this->_returnErrorCallbackResult($error_message);
         }
 

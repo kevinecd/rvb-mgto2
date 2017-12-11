@@ -3,7 +3,7 @@ namespace Reverb\ReverbSync\Helper\Orders\Creation;
 class Helper extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const ORDER_BEING_SYNCED_REGISTRY_KEY = 'current_reverb_sync_order';
-    
+
     protected $_moduleName = 'ReverbSync';
 
     protected $_shippingHelper = null;
@@ -13,18 +13,22 @@ class Helper extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $_reverbLogger;
 
+    protected $_registry;
+
     public function __construct(
-        \Reverb\ReverbSync\Model\Logger $reverblogger,
+        \Reverb\ReverbSync\Model\Log $reverblogger,
         \Reverb\ReverbSync\Helper\Orders\Creation\Shipping $shippingHelper,
         \Reverb\ReverbSync\Helper\Orders\Creation\Payment $paymentHelper,
         \Reverb\ReverbSync\Helper\Orders\Creation\Address $addressHelper,
-        \Reverb\ReverbSync\Helper\Orders\Creation\Customer $customerHelper
+        \Reverb\ReverbSync\Helper\Orders\Creation\Customer $customerHelper,
+        \Magento\Framework\Registry $registry
     ) {
         $this->_reverbLogger = $reverblogger;
         $this->_shippingHelper = $shippingHelper;
         $this->_paymentHelper = $paymentHelper;
         $this->_addressHelper = $addressHelper;
         $this->_customerHelper = $customerHelper;
+        $this->_registry = $registry;
     }
 
     /**
@@ -84,7 +88,7 @@ class Helper extends \Magento\Framework\App\Helper\AbstractHelper
         return array($first_name, $middle_name, $last_name);
     }
 
-    protected function _logOrderSyncError($error_message)
+    public function _logOrderSyncError($error_message)
     {
         $this->_reverbLogger->logOrderSyncError($error_message);
     }
@@ -92,16 +96,16 @@ class Helper extends \Magento\Framework\App\Helper\AbstractHelper
     public function _setOrderBeingSyncedInRegistry($reverbOrderObject)
     {
         $this->unsetOrderBeingSynced();
-        Mage::register(self::ORDER_BEING_SYNCED_REGISTRY_KEY, $reverbOrderObject);
+        $this->_registry->register(self::ORDER_BEING_SYNCED_REGISTRY_KEY, $reverbOrderObject);
     }
 
     public function getOrderBeingSyncedInRegistry()
     {
-        return Mage::registry(self::ORDER_BEING_SYNCED_REGISTRY_KEY);
+        return $this->_registry->registry(self::ORDER_BEING_SYNCED_REGISTRY_KEY);
     }
 
     public function unsetOrderBeingSynced()
     {
-        Mage::unregister(self::ORDER_BEING_SYNCED_REGISTRY_KEY);
+        $this->_registry->unregister(self::ORDER_BEING_SYNCED_REGISTRY_KEY);
     }
 }

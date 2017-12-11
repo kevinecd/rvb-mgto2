@@ -11,8 +11,14 @@ class Address extends \Magento\Framework\App\Helper\AbstractHelper//extends \Rev
     //      As such, use a code which will not lead to a country showing up in the admin panel
     const UNMATCHED_COUNTRY_CODE = 'XX';
 
-    public function addOrderAddressAsShippingAndBillingToQuote(stdClass $reverbOrderObject,
-                                                                   Mage_Sales_Model_Quote $quoteToBuild)
+    protected $_region;
+
+    public function __construct(
+        \Magento\Directory\Model\Region $region
+    ) {
+        $this->_region = $region;
+    }
+    public function addOrderAddressAsShippingAndBillingToQuote(\stdClass $reverbOrderObject, $quoteToBuild)
     {
         if ($reverbOrderObject->local_pickup)
         {
@@ -29,14 +35,16 @@ class Address extends \Magento\Framework\App\Helper\AbstractHelper//extends \Rev
         }
 
         $customerAddress = $this->_getCustomerAddressForOrder($shippingAddressObject);
+        $quoteToBuild->getBillingAddress()->addData($customerAddress);
+        $quoteToBuild->getShippingAddress()->addData($customerAddress);
 
-        $this->_addBillingAddressToQuote($customerAddress, $quoteToBuild);
-        $this->_getShippingHelper()->addShippingAddressToQuote($reverbOrderObject, $customerAddress, $quoteToBuild);
+        /*$this->_addBillingAddressToQuote($customerAddress, $quoteToBuild);
+        $this->_getShippingHelper()->addShippingAddressToQuote($reverbOrderObject, $customerAddress, $quoteToBuild);*/
     }
 
-    protected function _addLocalPickupAddressToOrderObject(stdClass $reverbOrderObject)
+    protected function _addLocalPickupAddressToOrderObject(\stdClass $reverbOrderObject)
     {
-        $shippingAddress = new stdClass();
+        $shippingAddress = new \stdClass();
         $shippingAddress->name = $reverbOrderObject->buyer_name;
         $shippingAddress->street_address = self::LOCAL_PICKUP_VALUE;
         $shippingAddress->extended_address = self::LOCAL_PICKUP_VALUE;
@@ -49,9 +57,9 @@ class Address extends \Magento\Framework\App\Helper\AbstractHelper//extends \Rev
         $reverbOrderObject->shipping_address = $shippingAddress;
     }
 
-    protected function _addNoAddressToOrderObject(stdClass $reverbOrderObject)
+    protected function _addNoAddressToOrderObject(\stdClass $reverbOrderObject)
     {
-        $shippingAddress = new stdClass();
+        $shippingAddress = new \stdClass();
         $shippingAddress->name = $reverbOrderObject->buyer_name;
         $shippingAddress->street_address = self::NO_ADDRESS_VALUE;
         $shippingAddress->extended_address = self::NO_ADDRESS_VALUE;
@@ -67,7 +75,7 @@ class Address extends \Magento\Framework\App\Helper\AbstractHelper//extends \Rev
     protected function _addBillingAddressToQuote($customerAddress, $quoteToBuild)
     {
         $billingQuoteAddress = Mage::getModel('sales/quote_address')
-                                    ->setAddressType(Mage_Sales_Model_Quote_Address::TYPE_BILLING);
+                                    ->setAddressType(\Magento\Sales\Model\Quote\Address::TYPE_BILLING);
         $quoteToBuild->addAddress($billingQuoteAddress);
         $billingQuoteAddress->importCustomerAddress($customerAddress)->setSaveInAddressBook(0);
         $addressForm = Mage::getModel('customer/form');
@@ -102,19 +110,19 @@ class Address extends \Magento\Framework\App\Helper\AbstractHelper//extends \Rev
     /**
      * Essentially a public-scope alias for _getCustomerAddressForOrder
      *
-     * @param stdClass $orderTaskArgumentsObject
+     * @param \stdClass $orderTaskArgumentsObject
      * @return Mage_Customer_Model_Address
      */
-    public function getCustomerAddressForOrderByArgumentsObject(stdClass $orderTaskArgumentsObject)
+    public function getCustomerAddressForOrderByArgumentsObject(\stdClass $orderTaskArgumentsObject)
     {
         return $this->_getCustomerAddressForOrder($orderTaskArgumentsObject);
     }
 
     /**
-     * @param stdClass $shippingAddressObject
+     * @param \stdClass $shippingAddressObject
      * @return Mage_Customer_Model_Address
      */
-    protected function _getCustomerAddressForOrder(stdClass $shippingAddressObject)
+    protected function _getCustomerAddressForOrder(\stdClass $shippingAddressObject)
     {
         $name = $shippingAddressObject->name;
 
@@ -127,7 +135,8 @@ class Address extends \Magento\Framework\App\Helper\AbstractHelper//extends \Rev
 
         $region = $shippingAddressObject->region;
         $country_code = $shippingAddressObject->country_code;
-        $regionObject = Mage::getModel('directory/region')->loadByCode($region, $country_code);
+       
+        $regionObject = $this->_region->loadByCode($region, $country_code);
         $region_id = $regionObject->getId();
 
         $address_data_array = array(
@@ -145,11 +154,11 @@ class Address extends \Magento\Framework\App\Helper\AbstractHelper//extends \Rev
 
         $address_data_array = $this->_trimAddressFields($address_data_array);
 
-        $customerAddress = Mage::getModel('customer/address');
-        /* @var Mage_Customer_Model_Address $customerAddress */
+        /*$customerAddress = Mage::getModel('customer/address');
+        
         $customerAddress->addData($address_data_array);
-
-        return $customerAddress;
+*/
+        return $address_data_array;
     }
 
     protected function _trimAddressFields(array $address_data_array)
@@ -169,5 +178,30 @@ class Address extends \Magento\Framework\App\Helper\AbstractHelper//extends \Rev
         }
 
         return $address_data_array;
+    }
+
+    public function getExplodedNameFields($name_as_string)
+    {
+        $exploded_name = explode(' ', $name_as_string);
+        $first_name = array_shift($exploded_name);
+        if (empty($exploded_name))
+        {
+            // Only one word was provided in the name field, default last name to "Customer"
+            $last_name = "Customer";
+            $middle_name = '';
+        }
+        else if (count($exploded_name) > 1)
+        {
+            // Middle name was provided
+            $middle_name = array_shift($exploded_name);
+            $last_name = implode(' ', $exploded_name);
+        }
+        else
+        {
+            $middle_name = '';
+            $last_name = implode(' ', $exploded_name);
+        }
+
+        return array($first_name, $middle_name, $last_name);
     }
 } 

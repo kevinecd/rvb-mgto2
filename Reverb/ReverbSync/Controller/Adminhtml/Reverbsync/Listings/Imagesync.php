@@ -30,6 +30,9 @@ class Imagesync extends \Magento\Backend\App\Action
 		$resultPage = $this->resultPageFactory->create();
 		$resultPage->setActiveMenu('Reverb_ReverbSync::reverb_listings_sync');
 		$resultPage->getConfig()->getTitle()->prepend((__('Reverb Listings Image Sync Tasks')));
+		$gridBlock = $resultPage->getLayout()->createBlock('\Reverb\ReverbSync\Block\Adminhtml\Listings\Image\Unique\Index');
+        $gridBlock->setNameInLayout('reverb_image_listing');
+        $resultPage->addContent($gridBlock);
 		return $resultPage;
 	}
 	/*public function indexAction()

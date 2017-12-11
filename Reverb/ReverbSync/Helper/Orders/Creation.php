@@ -41,11 +41,19 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
 
     protected $_cartmodel;
 
+    protected $_currencyHelper;
+
+    protected $_currencyModel;
+
+    protected $_eventManager;
+
+    protected $_orderModel;
+
     public function __construct(
         \Reverb\ReverbSync\Helper\Orders\Sync $ordersSyncHelper,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeconfig,
         \Reverb\ReverbSync\Model\Source\Store $sourceStore,
-        \Reverb\ReverbSync\Model\Logger $reverblogger,
+        \Reverb\ReverbSync\Model\Log $reverblogger,
         \Reverb\ReverbSync\Helper\Orders\Creation\Address $addressHelper,
         \Reverb\ReverbSync\Helper\Orders\Creation\Customer $customerHelper,
         \Reverb\ReverbSync\Helper\Orders\Creation\Shipping $shippingHelper,
@@ -54,15 +62,21 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
         \Magento\Catalog\Model\ProductFactory $productFactory,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Magento\Quote\Model\QuoteManagement $quoteManagement,
-        \Magento\Customer\Model\CustomerFactory $customerFactory,
+        \Magento\Customer\Model\CustomerFactory $customerfactory,
         \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
         \Magento\Sales\Model\Service\OrderService $orderService,
         \Magento\Checkout\Model\Cart $cartmodel,
         \Magento\Quote\Api\CartRepositoryInterface $cartRepositoryInterface,
         \Magento\Quote\Api\CartManagementInterface $cartManagementInterface,
-        \Magento\Quote\Model\Quote\Address\Rate $shippingRate
+        \Magento\Quote\Model\Quote\Address\Rate $shippingRate,
+        \Magento\Framework\Registry $registry,
+        \Reverb\ReverbSync\Helper\Orders\Creation\Currency $currencyHelper,
+        \Magento\Directory\Model\Currency $currencyModel,
+        \Reverb\ReverbSync\Model\Resource\Order $syncResourceOrder,
+        \Magento\Framework\Event\ManagerInterface $eventManager,
+        \Magento\Sales\Model\Order $orderModel
     ) {
-        parent::__construct($reverblogger, $shippingHelper, $paymentHelper, $addressHelper, $customerHelper);
+        parent::__construct($reverblogger, $shippingHelper, $paymentHelper, $addressHelper, $customerHelper, $registry);
         $this->_ordersSyncHelper = $ordersSyncHelper;
         $this->_scopeconfig = $scopeconfig;
         $this->_sourceStore = $sourceStore;
@@ -73,13 +87,19 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
         $this->_productFactory = $productFactory;
         $this->_productRepository = $productRepository;
         $this->_quoteManagement = $quoteManagement;
-        $this->_customerFactory = $customerFactory;
+        $this->_customerFactory = $customerfactory;
         $this->_customerRepository = $customerRepository;
         $this->_orderService = $orderService;
         $this->_cartmodel = $cartmodel;
         $this->_cartRepositoryInterface = $cartRepositoryInterface;
         $this->_cartManagementInterface = $cartManagementInterface;
         $this->_shippingRate = $shippingRate;
+        $this->_currencyHelper = $currencyHelper;
+        $this->_currencyModel = $currencyModel;
+        $this->_syncResourceOrder = $syncResourceOrder;
+        $this->_eventManager = $eventManager;
+        $this->_registry = $registry;
+        $this->_orderModel = $orderModel;
     }
     
     public function createMagentoOrder(\stdClass $reverbOrderObject)
@@ -117,71 +137,48 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
         $cart->addProduct($productToAddToQuote, $qty);
 
 
-       // $this->_addReverbItemLinkToQuoteItem($cart, $reverbOrderObject);
-
-        //$this->_addTaxAndCurrencyToQuoteItem($cart, $reverbOrderObject);
-        $_objectmanager = \Magento\Framework\App\ObjectManager::getInstance();
-
         try{
-            //if(!$customer->getEntityId()){
-           /* $email = 'test'.uniqid().'@gmail.com';
+          
+            $customerid = $this->_customerHelper->addCustomerToQuote($reverbOrderObject, $cart);
 
-            $websiteId  = $this->_storeManager->getWebsite()->getWebsiteId();
+            $customer= $this->_customerRepository->getById($customerid);
+            $cart->setCurrency();
+            $cart->assignCustomer($customer); 
 
-            // Instantiate object (this is the most important part)
-            $customer   = $this->_customerFactory->create();
-            $customer->setWebsiteId($websiteId);
+            $this->_getAddressHelper()->addOrderAddressAsShippingAndBillingToQuote($reverbOrderObject, $cart);
+    
+            $this->_getShippingHelper()->setShippingMethodAndRateOnQuote($reverbOrderObject, $cart);
+            
+            $this->_getPaymentHelper()->setPaymentMethodOnQuote($reverbOrderObject, $cart);
+            
+            $cart->setInventoryProcessed(false);
+            $cart->collectTotals();
+            $cart->setReverbOrderId($reverb_order_number);
+            $cart->save();
 
-            // Preparing data for new customer
-            $customer->setEmail($email); 
-            $customer->setFirstname("First Name");
-            $customer->setLastname("Last name");
-            $customer->setPassword("password");
+            $this->_addReverbItemLinkToQuoteItem($cart, $reverbOrderObject);
+            $this->_addTaxAndCurrencyToQuoteItem($cart, $reverbOrderObject);
+            
+            $cartnew = $this->_cartRepositoryInterface->get($cart->getId());
+            $cartnew->setReverbOrderId($reverb_order_number);
+            $order_id = $this->_cartManagementInterface->placeOrder($cartnew->getId());
 
-            $customer->save(); 
-            return true;*/
+            $order = $this->_orderModel->load($order_id);
 
-            //}
         }catch(\Exception $e){
-            echo 'custom error = ';
+            echo 'customererror = ';
             echo $e->getMessage();
             exit;
+            $error_message = 'Reverb Order Create Error = '.$e->getMessage();
+            $this->_logOrderSyncError($error_message);
         }
-        //$customer= $this->_customerRepository->getById($customer->getEntityId());
-        $cart->setCurrency();
-        $cart->assignCustomer($customer);
-        //$this->_getCustomerHelper()->addCustomerToQuote($reverbOrderObject, $cart);
- 
-        $this->_getAddressHelper()->addOrderAddressAsShippingAndBillingToQuote($reverbOrderObject, $cart);
-        $this->_getShippingHelper()->setShippingMethodAndRateOnQuote($reverbOrderObject, $cart);
-        $this->_getPaymentHelper()->setPaymentMethodOnQuote($reverbOrderObject, $cart);
-
-        exit;
-        // The calling block will handle catching any exceptions occurring from the calls below
-        $service = Mage::getModel('sales/service_quote', $cart);
-        /* @var Mage_Sales_Model_Service_Quote $service */
-        $service->submitAll();
-
-        $order = $service->getOrder();
-
-        $order->setReverbOrderId($reverb_order_number);
-
-        $reverb_order_status = $reverbOrderObject->status;
-        if (empty($reverb_order_status))
-        {
-            $reverb_order_status = 'created';
-        }
-        $order->setReverbOrderStatus($reverb_order_status);
-
-        $order->save();
 
         try
         {
             // Update store name as adapter query for performance consideration purposes
-            Mage::getResourceSingleton('reverbSync/order')
-                ->setReverbStoreNameByReverbOrderId($reverb_order_number, self::REVERB_ORDER_STORE_NAME);
+            $this->_syncResourceOrder->setReverbStoreNameByReverbOrderId($order->getId(),$reverb_order_number, self::REVERB_ORDER_STORE_NAME);
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             // Log the exception but don't stop execution
             $error_message = __(self::EXCEPTION_UPDATE_STORE_NAME, self::REVERB_ORDER_STORE_NAME, $reverb_order_number, $e->getMessage());
@@ -191,11 +188,11 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
         try
         {
             // Dispatch an event for clients to hook in to regarding order creation
-            Mage::dispatchEvent('reverb_order_created',
+            $this->_eventManager->dispatch('reverb_order_created',
                                 array('magento_order_object' => $order, 'reverb_order_object' => $reverbOrderObject)
             );
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             // Log the exception but don't stop execution
             $error_message = __(self::EXCEPTION_REVERB_ORDER_CREATION_EVENT_OBSERVER, $reverb_order_number,
@@ -203,8 +200,7 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
             $this->_logOrderSyncError($error_message);
         }
 
-        $this->_getShippingHelper()->unsetOrderBeingSynced();
-        $this->_getPaymentHelper()->unsetOrderBeingSynced();
+         $this->_registry->unregister(\Reverb\ReverbSync\Helper\Orders\Creation\Helper::ORDER_BEING_SYNCED_REGISTRY_KEY);
 
         return $order;
     }
@@ -238,19 +234,21 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
         return $product;
     }
 
-    protected function _addReverbItemLinkToQuoteItem($cart, $reverbOrderObject)
+    protected function _addReverbItemLinkToQuoteItem($quoteToBuild, $reverbOrderObject)
     {
-        $items = $cart->getQuote()->getAllVisibleItems();
-        foreach ($items as $key => $item) {
-            if($item->getSku()==$reverbOrderObject->sku){
-                if (isset($reverbOrderObject->_links->listing->href))
-                {
-                    $listing_api_url_path = $reverbOrderObject->_links->listing->href;
-                    $item->setReverbItemLink($listing_api_url_path);
-                }        
+        $items = $quoteToBuild->getAllVisibleItems();
+        if(is_array($items)){
+            foreach ($items as $key => $item) {
+                if($item->getSku()==$reverbOrderObject->sku){
+                    if (isset($reverbOrderObject->_links->listing->href))
+                    {
+                        $listing_api_url_path = $reverbOrderObject->_links->listing->href;
+                        $item->setReverbItemLink($listing_api_url_path);
+                        $item->save();
+                    }        
+                }
             }
         }
-        
     }
 
     protected function _addTaxAndCurrencyToQuoteItem($quoteToBuild, $reverbOrderObject)
@@ -275,27 +273,19 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
         {
             $tax_amount = "0.00";
         }
-        foreach ($this->_cartmodel->getQuote()->getAllItems() as $key => $item) {
-            echo $item->getId();
-            echo '<br/>';
-        }
-        exit; 
+
+        $totalBaseTax = floatval($tax_amount);
+
         $quoteItem = $quoteToBuild->getItemsCollection()->getFirstItem();
-
-
         $quoteItem->setBaseTaxAmount($totalBaseTax);
-        $totalTax = $quoteToBuild->getStore()->convertPrice($totalBaseTax);
-        echo $quoteItem->setTaxAmount($totalTax);
-        echo 'carttest';
-        exit;
-/*
-        // The check to ensure this field is set has already been made at this point
+        //$totalTax = $quoteToBuild->getStore()->convertPrice($totalBaseTax);
+        $quoteItem->setTaxAmount($totalBaseTax);
         $amountProductObject = $reverbOrderObject->amount_product;
         $currency_code = $amountProductObject->currency;
-        $currencyHelper = Mage::helper('ReverbSync/orders_creation_currency');
+        
         if (!empty($currency_code))
         {
-            if (!$currencyHelper->isValidCurrencyCode($currency_code))
+            if (!$this->_currencyHelper->isValidCurrencyCode($currency_code))
             {
                 $error_message = __(self::INVALID_CURRENCY_CODE, $currency_code);
                 throw new \Exception($error_message);
@@ -303,10 +293,10 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
         }
         else
         {
-            $currency_code = $currencyHelper->getDefaultCurrencyCode();
+            $currency_code = $this->_currencyHelper->getDefaultCurrencyCode();
         }
-        $currencyToForce = Mage::getModel('directory/currency')->load($currency_code);
-        $quoteToBuild->setForcedCurrency($currencyToForce);*/
+        $currencyToForce = $this->_currencyModel->load($currency_code);
+        $quoteToBuild->setForcedCurrency($currencyToForce);
     }
 
     protected function _getStore()
@@ -315,11 +305,10 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
         $system_configured_store_id = $this->_getSystemConfigurationStoreId();
         if ((!is_null($system_configured_store_id)) && ($system_configured_store_id !== false))
         {
-            // If so return it
             return $system_configured_store_id;
         }
 
-        return $store = $this->_storeManager->getStore();
+        return false;
         
     }
 
@@ -333,12 +322,17 @@ class Creation extends \Reverb\ReverbSync\Helper\Orders\Creation\Helper
                 return $configured_store_id;
             }
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $error_message = __(self::EXCEPTION_CONFIGURED_STORE_ID, $configured_store_id, $e->getMessage());
-            $this->_reverbLogger->logOrderSyncError($error_message);
+            $this->_logOrderSyncError($error_message);
         }
 
         return false;
+    }
+
+    public function _logOrderSyncError($error_message)
+    {
+        $this->_reverbLogger->logOrderSyncError($error_message);
     }
 }

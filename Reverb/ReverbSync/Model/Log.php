@@ -82,7 +82,7 @@ class Log
             $sync_process = 'orders';
         }
 
-        $log_file = self::LOG_FILE_PREFIX . '_' . $sync_process . '.log';
+        $log_file = self::LOG_FILE_PREFIX . '_' . $sync_process;
         $this->logReverbMessage($error_message, $log_file);
     }
 
@@ -93,7 +93,7 @@ class Log
             // Logging is not enabled for the Reverb module, so do nothing
             return;
         }
-        $this->_logger->info($message); 
+        $this->_logger->info($file_to_log_to.', message ='.$message); 
     }
 
     /**

@@ -3,10 +3,7 @@
 	<event name="catalog_product_save_after">
         <observer name="reverb_product_save_after" instance="Reverb\ReverbSync\Observer\CatalogProductSaveAfter"/>
     </event>
-    <event name="should_reverb_shipping_be_allowed">
-        <observer name="check_for_syncing_reverb_order" instance="Reverb\ReverbSync\Observer\checkForSyncingReverbOrderForShipping"/>
-    </event>
-    <event name="should_reverb_payment_be_allowed">
-        <observer name="check_for_syncing_reverb_order" instance="Reverb\ReverbSync\Observer\checkForSyncingReverbOrderForPayment"/>
+    <event name="sales_order_shipment_track_save_after">
+        <observer name="reverb_order_shipment_track_save_after" instance="Reverb\ReverbSync\Observer\Shipment"/>
     </event>
 </config>

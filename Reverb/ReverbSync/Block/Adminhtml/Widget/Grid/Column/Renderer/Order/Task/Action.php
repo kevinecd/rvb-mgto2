@@ -1,29 +1,21 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 9/16/15
- */
-class Reverb_ReverbSync_Block_Adminhtml_Widget_Grid_Column_Renderer_Order_Task_Action
-    extends Mage_Adminhtml_Block_Widget_Grid_Column_Renderer_Action
+namespace Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Task;
+use Magento\Framework\DataObject;
+class Action extends \Magento\Backend\Block\Widget\Grid\Column\Renderer\AbstractRenderer
 {
+
     const CONFIRM_TEMPLATE = 'Are you sure you want to manually %s this order sync task?';
 
-    public function render(Varien_Object $row)
+    public function render(DataObject $row)
     {
-        $task_action_text = $row->getActionText();
+        $task_action_text = __('Execute');//$row->getActionText();
         if (empty($task_action_text))
         {
             return '';
         }
-
-        $action_array = array();
-        $action_array['caption'] = $task_action_text;
-        $action_array['confirm'] = sprintf(self::CONFIRM_TEMPLATE, $task_action_text);
-
-        $task_controller = $this->getColumn()->getTaskController();
-        $action_url = $this->getUrl('adminhtml/' . $task_controller . '/actOnTask', array('task_id' => $row->getId()));
-        $action_array['url'] = $action_url;
-
-        return $this->_toLinkHtml($action_array, $row);
+         $actionurl = "<a href='" . $this->getUrl('reverbprocessqueue/processqueue/actontask',['task_id'=> $row->getId(),'type'=>'order_update']) . "'>";
+        $actionurl .= __('Execute'); 
+        $actionurl .= "</a>";
+        return $actionurl;
     }
 }

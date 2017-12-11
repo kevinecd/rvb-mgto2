@@ -26,6 +26,10 @@ use Magento\Framework\View\Result\PageFactory;
             $resultPage = $this->resultPageFactory->create();
 	        $resultPage->setActiveMenu('Reverb_ReverbSync::reverb_listings_sync');
 	        $resultPage->getConfig()->getTitle()->prepend((__('Reverb Listing Sync')));
+	        $resultPage->getConfig()->getTitle()->prepend((__('Reverb Listing Sync')));
+	        $gridBlock = $resultPage->getLayout()->createBlock('\Reverb\ReverbSync\Block\Adminhtml\Listings\Index\Syncing');
+	        $gridBlock->setNameInLayout('reverbreport');
+	        $resultPage->addContent($gridBlock);
 	        return $resultPage;
         }
     }

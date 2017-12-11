@@ -55,16 +55,17 @@ class Reverbreport extends \Magento\Backend\Block\Widget\Grid\Container{
      */
     protected function _prepareLayout()
     {
-        $addButtonProps = [
+       /* $addButtonProps = [
             'id' => 'clear_all_tasks',
             'label' => __('Clear all tasks'),
             'class' => 'clear_task button btn',
+            'onclick' => "setLocation('" . $this->_getProductCreateUrl('simple') . "')",
             'button_class' => 'button',
           //  'class_name' => 'Magento\Backend\Block\Widget\Button\SplitButton',
            // 'options' => $this->_getAddProductButtonOptions(),
         ];
         $this->buttonList->add('clear_all_tasks', $addButtonProps);
-
+        */
         return parent::_prepareLayout();
     }
 

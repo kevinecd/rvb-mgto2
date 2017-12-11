@@ -18,20 +18,34 @@ class Actontask extends \Magento\Backend\App\Action
     
     protected $_adminHelper;
     
-    public function __construct(Context $context, PageFactory $resultPageFactory,\Reverb\ProcessQueue\Model\Task\Unique $modelTaskUnique, \Reverb\ProcessQueue\Helper\Task\Processor $taskProcessor, \Reverb\ReverbSync\Helper\Admin $adminhelper) {
+    public function __construct(Context $context, 
+        PageFactory $resultPageFactory,
+        \Reverb\ProcessQueue\Model\Task\Unique $modelTaskUnique,
+        \Reverb\ProcessQueue\Model\Task $modelTask,
+        \Reverb\ProcessQueue\Helper\Task\Processor $taskProcessor,
+        \Reverb\ReverbSync\Helper\Admin $adminhelper
+    ) {
         parent::__construct($context);
         $this->resultPageFactory = $resultPageFactory;
         $this->_modelTaskUnique = $modelTaskUnique;
+        $this->_modelTask = $modelTask;
         $this->_processqueueTaskProcessor = $taskProcessor;
         $this->_adminHelper = $adminhelper;
     }
 
     public function execute(){
-        $_controller_description = 'processqueue_actontask ';//$this->getControllerDescription();
+        $_controller_description = 'processqueue_actontask';//$this->getControllerDescription();
 
         $_quote_task = $this->_modelTaskUnique;
 
         $task_id = $this->getRequest()->getParam('task_id');
+        $type = $this->getRequest()->getParam('type');
+        $redirecturl = 'reverbsync/reverbsync_listings/imagesync';
+        if($type=='order_update'){
+            $_quote_task = $this->_modelTask;
+            $_controller_description = $_controller_description.' '.$type;
+            $redirecturl = 'reverbsync/reverbsync_orders/sync';
+        }
         $_quote_task = $_quote_task->load($task_id);
         
         if ((!is_object($_quote_task)) || (!$_quote_task->getId())) {
@@ -46,7 +60,7 @@ class Actontask extends \Magento\Backend\App\Action
             $error_message = sprintf(\Reverb\ProcessQueue\Controller\Adminhtml\Processqueue\Index::EXCEPTION_ACT_ON_TASK, $_controller_description, $task_id, $e->getMessage());
             $this->_adminHelper->addAdminErrorMessage($error_message);
             $resultRedirect = $this->resultRedirectFactory->create();
-            $resultRedirect->setPath('reverbsync/reverbsync_listings/imagesync');
+            $resultRedirect->setPath($redirecturl);
             return $resultRedirect;
         }
 
@@ -55,7 +69,7 @@ class Actontask extends \Magento\Backend\App\Action
         $this->_adminHelper->addNotice($notice_message);
         
         $resultRedirect = $this->resultRedirectFactory->create();
-        $resultRedirect->setPath('reverbsync/reverbsync_listings/imagesync');
+        $resultRedirect->setPath($redirecturl);
         return $resultRedirect;
     }
 }

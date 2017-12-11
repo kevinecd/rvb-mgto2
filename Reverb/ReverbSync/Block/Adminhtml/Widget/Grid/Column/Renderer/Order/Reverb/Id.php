@@ -1,21 +1,16 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 9/16/15
- */
-
-class Reverb_ReverbSync_Block_Adminhtml_Widget_Grid_Column_Renderer_Order_Reverb_Id
-    extends Reverb_ReverbSync_Block_Adminhtml_Widget_Grid_Column_Renderer_Order_Id
+namespace Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Reverb;
+use Magento\Framework\DataObject;
+class Id extends \Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Id
 {
-    public function _getValue(Varien_Object $row)
+    public function render(DataObject $row)
     {
-        $argumentsObject = $row->getArgumentsObject(true);
+         $argumentsObject = $row->getArgumentsObject(true);
         if (isset($argumentsObject->order_number))
         {
             $reverb_order_number = $argumentsObject->order_number;
             return $this->getHtmlAnchorLinkToViewOrderPageByReverbOrderId($reverb_order_number);
         }
-        // This should never happen
         return '';
     }
 }

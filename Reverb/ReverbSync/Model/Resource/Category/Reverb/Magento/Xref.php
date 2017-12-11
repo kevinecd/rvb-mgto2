@@ -106,7 +106,7 @@ class Xref extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
      */
     public function loadMagentoReverbCategoryMappingArrayIntoDatabase(array $magento_reverb_category_mapping)
     {
-        return $this->_getWriteAdapter()->insertArray($this->getMainTable(), $this->_database_insert_columns_array,
+        return $this->getConnection()->insertArray($this->getMainTable(), $this->_database_insert_columns_array,
                                                         $magento_reverb_category_mapping);
     }
 
@@ -117,7 +117,7 @@ class Xref extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
      */
     protected function _truncateTable()
     {
-        $rows_deleted = $this->_getWriteAdapter()->delete($this->getMainTable());
+        $rows_deleted = $this->getConnection()->delete($this->getMainTable());
         return $rows_deleted;
     }
 }

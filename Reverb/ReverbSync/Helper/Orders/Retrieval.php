@@ -56,12 +56,12 @@ abstract class Retrieval// extends Reverb_ReverbSync_Helper_Data
 
     protected function _retrieveAndQueueOrders()
     {
+
         $api_url_path_to_call = $this->_getDefaultOrderRetrievalApiUrlPath();
 
         do
         {
             $reverbOrdersJsonObject = $this->_retrieveOrdersJsonFromReverb($api_url_path_to_call);
-
             if (!is_object($reverbOrdersJsonObject))
             {
                 return false;
@@ -78,7 +78,7 @@ abstract class Retrieval// extends Reverb_ReverbSync_Helper_Data
                 {
                     $this->_attemptToQueueMagentoOrderActions($orderDataObject);
                 }
-                catch(Exception $e)
+                catch(\Exception $e)
                 {
                     $order_sync_action = $this->getOrderSyncAction();
                     $error_message = __(self::EXCEPTION_QUEUE_MAGENTO_ORDER_ACTION, $order_sync_action, $e->getMessage(), json_encode($orderDataObject));
@@ -128,7 +128,7 @@ abstract class Retrieval// extends Reverb_ReverbSync_Helper_Data
                 throw new \Exception($error_message);
             }
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $error_message = __(self::EXCEPTION_QUEUE_ORDER_ACTION, $order_number, $e->getMessage());
             throw new \Exception($error_message);
@@ -141,7 +141,7 @@ abstract class Retrieval// extends Reverb_ReverbSync_Helper_Data
     {
         $base_url = $this->_reverbSyncHelper->getReverbBaseUrl();
         $api_url = $base_url . $api_url_path;
-
+        
         $curlResource = $this->_reverbSyncHelper->getCurlResource($api_url);
         //Execute the API call
         $json_response = $curlResource->read();
@@ -170,7 +170,7 @@ abstract class Retrieval// extends Reverb_ReverbSync_Helper_Data
         $api_call_url_path_template = $this->_getAPICallUrlPathTemplate();
         $local_timezone_timestamp = $this->_datetime->timestamp();
         $minutes_in_past_for_api_call = $this->_getMinutesInPastForAPICall();
-        $past_timestamp_local_timezone = $local_timezone_timestamp - (60 * $minutes_in_past_for_api_call);
+        $past_timestamp_local_timezone = $local_timezone_timestamp - (300 * $minutes_in_past_for_api_call);
         $past_gmt_datetime = $this->_datetime->gmtDate('c', $past_timestamp_local_timezone);
         
         $api_url_path = sprintf($api_call_url_path_template, $past_gmt_datetime);

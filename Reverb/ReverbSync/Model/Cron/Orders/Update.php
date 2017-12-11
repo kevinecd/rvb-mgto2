@@ -45,12 +45,10 @@ class Update extends Cronabstract implements Croninterface
             $this->_retrievalUpdate->queueReverbOrderSyncActions();
             $this->_taskprocessor->processQueueTasks('order_update');
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $error_message = sprintf(self::CRON_UNCAUGHT_EXCEPTION, $e->getMessage());
-            Mage::log($error_message, null, 'reverb_process_queue_error.log');
-            $exceptionToLog = new \Exception($error_message);
-            Mage::logException($exceptionToLog);
+            $this->_logError($error_message);
         }
     }
 

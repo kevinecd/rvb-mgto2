@@ -5,7 +5,17 @@ class Shipping extends \Magento\Framework\App\Helper\AbstractHelper//extends \Re
     const ERROR_INVALID_SHIPPING_METHOD_CODE = 'Unable to get a rate for the Reverb Shipping Method';
     protected $_shipping_method_code = 'reverbshipping_reverbshipping';
 
+    protected $_registry;
 
+    protected $_shippingRate;
+
+    public function __construct(
+            \Magento\Framework\Registry $registry,
+            \Magento\Quote\Model\Quote\Address\Rate $shippingRate
+        ) {
+        $this->_registry = $registry;
+        $this->_shippingRate = $shippingRate;
+    }
     /**
      * @param stdClass $reverbOrderObject
      * @param \Magento\Sales\Model\Quote $quoteToBuild
@@ -13,20 +23,28 @@ class Shipping extends \Magento\Framework\App\Helper\AbstractHelper//extends \Re
      */
     public function setShippingMethodAndRateOnQuote($reverbOrderObject, $quoteToBuild)
     {
-        $this->_setOrderBeingSyncedInRegistry($reverbOrderObject);
+        $this->_registry->unregister(\Reverb\ReverbSync\Helper\Orders\Creation\Helper::ORDER_BEING_SYNCED_REGISTRY_KEY);
+        $this->_registry->register(\Reverb\ReverbSync\Helper\Orders\Creation\Helper::ORDER_BEING_SYNCED_REGISTRY_KEY, $reverbOrderObject);
+
+        $this->_shippingRate
+                ->setCode($this->_shipping_method_code)
+                ->getPrice(1);
+
+        $shippingAddress = $quoteToBuild->getShippingAddress();
+    
+        $shippingAddress->setCollectShippingRates(true)
+                ->collectShippingRates()
+                ->setShippingMethod($this->_shipping_method_code);
 
         $shipping_method_code = $this->_shipping_method_code;
         $rate = $quoteToBuild->getShippingAddress()->getShippingRateByCode($shipping_method_code);
-        if (!$rate)
-        {
-            $error_message = __(self::ERROR_INVALID_SHIPPING_METHOD_CODE, $shipping_method_code);
-            throw new \Exception($error_message);
-        }
-
+      
         $quoteToBuild->getShippingAddress()->setShippingMethod($shipping_method_code);
         $quoteToBuild->setTotalsCollectedFlag(false);
         $quoteToBuild->collectTotals();
         $quoteToBuild->save();
+        $quoteToBuild->getShippingAddress()->addShippingRate($this->_shippingRate);
+
     }
 
     /**

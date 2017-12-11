@@ -126,7 +126,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended
     protected function _prepareCollection()
     {
         $store = $this->_getStore();
-        $collection = $this->_orderSyncCollection;
+        $collection = $this->_orderSyncCollection->addFieldToFilter('code',array('eq'=>'order_update'));
         $this->setCollection($collection);
         
         parent::_prepareCollection();
@@ -142,7 +142,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended
 				'width'     => 50,
 				'align'     => 'left',
 				'type'      => 'text',
-				//'renderer'  => 'ReverbSync/adminhtml_widget_grid_column_renderer_order_reverb_id',
+				'renderer'  => '\Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Reverb\Id',
 				'filter'    => false,
 				'sortable'  => false
 			]
@@ -165,7 +165,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended
 				'header'    => __('Sku'),
 				'align'     => 'left',
 				'type'      => 'text',
-				//'renderer'  => 'ReverbSync/adminhtml_widget_grid_column_renderer_order_product_sku',
+				'renderer'  => '\Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Product\Sku',
 				'filter'    => false,
 				'sortable'  => false
 			]
@@ -177,7 +177,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended
 				'header'    => __('Name'),
 				'align'     => 'left',
 				'type'      => 'text',
-				//'renderer'  => 'ReverbSync/adminhtml_widget_grid_column_renderer_order_product_name',
+				'renderer'  => '\Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Product\Name',
 				'filter'    => false,
 				'sortable'  => false
 			]
@@ -220,7 +220,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended
 				'width'     => '50px',
 				'type'      => 'action',
 				'getter'    => 'getId',
-				//'renderer'  => 'ReverbSync/adminhtml_widget_grid_column_renderer_order_task_action',
+				'renderer'  => '\Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Task\Action',
 				'filter'    => false,
 				'sortable'  => false,
 				'task_controller' => 'ReverbSync_orders_sync'

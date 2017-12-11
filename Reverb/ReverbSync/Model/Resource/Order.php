@@ -58,10 +58,10 @@ class Order extends \Magento\Sales\Model\ResourceModel\Order
         return $rows_updated;
     }
 
-    public function setReverbStoreNameByReverbOrderId($reverb_order_id, $store_name)
+    public function setReverbStoreNameByReverbOrderId($orderId, $reverb_order_id, $store_name)
     {
-        $update_bind_array = array('store_name' => $store_name);
-        $where_conditions_array = array('reverb_order_id=?' => $reverb_order_id);
+        $update_bind_array = array('store_name' => $store_name,'reverb_order_id' => $reverb_order_id);
+        $where_conditions_array = array('entity_id=?' => $orderId);
 
         $rows_updated = $this->getConnection()
                             ->update($this->getMainTable(), $update_bind_array, $where_conditions_array);

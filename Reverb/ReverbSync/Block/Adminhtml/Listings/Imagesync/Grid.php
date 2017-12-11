@@ -126,7 +126,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended
     protected function _prepareCollection()
     {
         $store = $this->_getStore();
-        $collection = $this->_imageSyncCollection;
+        $collection = $this->_imageSyncCollection->addFieldToFilter('code','listing_image_sync');
         $this->setCollection($collection);
         
         parent::_prepareCollection();

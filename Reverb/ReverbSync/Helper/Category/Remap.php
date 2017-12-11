@@ -1,38 +1,58 @@
 <?php
-/**
- * Author: Sean Dunagan (https://github.com/dunagan5887)
- * Created: 4/6/16
- */
+namespace Reverb\ReverbSync\Helper\Category;
 
-/**
- * Author: Sean Dunagan (https://github.com/dunagan5887)
- * Created: 4/6/16
- *
- * Class Reverb_ReverbSync_Helper_Category_Remap
- *
- * This class is only intended to be used to migrate the Magento-Reverb category mapping from the old database
- *  schema to the new schema. It should only be referenced from ReverbSync migration script
- *  mysql4-upgrade-0.1.14-0.1.15.php. Any other invokation will result in exceptions being throw due to the original
- *  database table no longer existing
- */
-class Reverb_ReverbSync_Helper_Category_Remap extends Mage_Core_Helper_Abstract
+class Remap extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const EXCEPTION_CATEGORY_FETCH_API = 'An exception occurred while attempting to fetch the updated Reverb categories json: %s';
 
     protected $_categoryUpdateHelper = null;
+	
+	/**
+     * @var \Reverb\ReverbSync\Helper\Api\Adapter\Category
+     */
+    protected $categoryAdapterHelper;
+	
+	/**
+     * @var \Reverb\ReverbSync\Model\Category\Reverb
+     */
+    protected $reverbCategoryModel;
+	
+	/**
+     * @var \Reverb\ReverbSync\Model\Category\Magento\Reverb\Mapping
+     */
+    protected $reverbCategoryMappingModel;
+	
+	/**
+     * @param \Magento\Framework\App\Helper\Context $context
+     * @param \Reverb\ReverbSync\Helper\Api\Adapter\Category $categoryAdapterHelper
+     * @param \Reverb\ReverbSync\Model\Category\Reverb $reverbCategoryModel
+     * @param \Reverb\ReverbSync\Model\Category\Magento\Reverb\Mapping $reverbCategoryMappingModel
+     */
+	 
+	public function __construct(
+        \Magento\Framework\App\Helper\Context $context,
+		\Reverb\ReverbSync\Helper\Api\Adapter\Category $categoryAdapterHelper,
+		\Reverb\ReverbSync\Model\Category\Reverb $reverbCategoryModel,
+		\Reverb\ReverbSync\Model\Category\Magento\Reverb\Mapping $reverbCategoryMappingModel
+    ) {
+		$this->_categoryAdapterHelper = $categoryAdapterHelper;
+		$this->_reverbCategoryModel = $reverbCategoryModel;
+		$this->_reverbCategoryMappingModel = $reverbCategoryMappingModel;
+        parent::__construct($context);
+    }
 
     public function remapReverbCategories()
     {
         try
         {
             // Attempt to retrieve the updated Reverb categories list
-            $reverb_categories_as_array = Mage::helper('ReverbSync/api_adapter_category')->executeCategoryAPIFetch();
+            $reverb_categories_as_array = $this->_categoryAdapterHelper->executeCategoryAPIFetch();
         }
         catch(Exception $e)
         {
             // This should not occur, but in the event that it does the client will have to manually remap
             //      their categories after clicking the "Update Reverb Categories" button in the admin panel
-            $error_message = $this->__(self::EXCEPTION_CATEGORY_FETCH_API, $e->getMessage());
+            $error_message = __(self::EXCEPTION_CATEGORY_FETCH_API, $e->getMessage());
             Mage::getSingleton('reverbSync/log')->logCategoryMappingError($error_message);
             return;
         }
@@ -124,15 +144,15 @@ class Reverb_ReverbSync_Helper_Category_Remap extends Mage_Core_Helper_Abstract
         else
         {
             // Create a new Reverb Category Row
-            $reverbCategory = Mage::getModel('reverbSync/category_reverb');
-            $reverbCategory->setData(Reverb_ReverbSync_Model_Category_Reverb::NAME_FIELD, $category_name);
+            $reverbCategory = $this->_reverbCategoryModel;
+            $reverbCategory->setData(\Reverb\ReverbSync\Model\Category\Reverb::NAME_FIELD, $category_name);
             $product_type_slug = isset($reverb_category_data_array['product_type_slug'])
                                     ? $reverb_category_data_array['product_type_slug'] : '';
-            $reverbCategory->setData(Reverb_ReverbSync_Model_Category_Reverb::PRODUCT_TYPE_SLUG_FIELD, $product_type_slug);
+            $reverbCategory->setData(\Reverb\ReverbSync\Model\Category\Reverb::PRODUCT_TYPE_SLUG_FIELD, $product_type_slug);
             $category_slug = isset($reverb_category_data_array['slug']) ? $reverb_category_data_array['slug'] : '';
-            $reverbCategory->setData(Reverb_ReverbSync_Model_Category_Reverb::CATEGORY_SLUG_FIELD, $category_slug);
-            $reverbCategory->setData(Reverb_ReverbSync_Model_Category_Reverb::UUID_FIELD, $reverb_category_uuid);
-            $reverbCategory->setData(Reverb_ReverbSync_Model_Category_Reverb::PARENT_UUID_FIELD, $reverb_parent_category_uuid);
+            $reverbCategory->setData(\Reverb\ReverbSync\Model\Category\Reverb::CATEGORY_SLUG_FIELD, $category_slug);
+            $reverbCategory->setData(\Reverb\ReverbSync\Model\Category\Reverb::UUID_FIELD, $reverb_category_uuid);
+            $reverbCategory->setData(\Reverb\ReverbSync\Model\Category\Reverb::PARENT_UUID_FIELD, $reverb_parent_category_uuid);
             // Since we are going to create this category for the first time, there won't be any category
             //      mappings to it in the system
             $query_category_mappings_to_preserve = false;
@@ -148,7 +168,7 @@ class Reverb_ReverbSync_Helper_Category_Remap extends Mage_Core_Helper_Abstract
                                         ? $reverb_category_data_array['product_type_slug'] : null;
         $reverb_category_slug = isset($reverb_category_data_array['slug']) ? $reverb_category_data_array['slug'] : null;
 
-        $reverbCategory = Mage::getModel('reverbSync/category_reverb')
+		$reverbCategory = $this->_reverbCategoryModel
                             ->getCollection()
                             ->addFieldToFilter('reverb_product_type_slug', $reverb_product_type_slug)
                             ->addFieldToFilter('reverb_category_slug', $reverb_category_slug)
@@ -158,7 +178,7 @@ class Reverb_ReverbSync_Helper_Category_Remap extends Mage_Core_Helper_Abstract
         if ((!is_object($reverbCategory)) || (!$reverbCategory->getId()))
         {
             // The category may have a NULL value for reverb_product_type_slug
-            $reverbCategory = Mage::getModel('reverbSync/category_reverb')
+            $reverbCategory = $this->_reverbCategoryModel
                                 ->getCollection()
                                 ->addFieldToFilter('reverb_product_type_slug', array('null' => true))
                                 ->addFieldToFilter('reverb_category_slug', $reverb_category_slug)
@@ -193,7 +213,7 @@ class Reverb_ReverbSync_Helper_Category_Remap extends Mage_Core_Helper_Abstract
      */
     protected function _getMagentoCategoriesMappedToReverbCategory($reverb_category_id)
     {
-        $legacy_reverb_magento_category_mappings = Mage::getModel('reverbSync/category_magento_reverb_mapping')
+        $legacy_reverb_magento_category_mappings = $this->_reverbCategoryMappingModel
                                                         ->getCollection()
                                                         ->addFieldToFilter('reverb_category_id', $reverb_category_id)
                                                         ->getItems();

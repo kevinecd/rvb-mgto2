@@ -1,31 +1,38 @@
 <?php
-
-class Reverb_ReverbSync_Block_Adminhtml_Listings_Index_Syncing extends Mage_Adminhtml_Block_Widget_Container
+namespace Reverb\ReverbSync\Block\Adminhtml\Listings\Index;
+class Syncing extends \Magento\Backend\Block\Widget\Container
 {
     const HEADER_TEXT_TEMPLATE = '%s of %s product listings have completed syncing with Reverb';
 
-    public function __construct()
+    public function __construct(
+        \Magento\Backend\Block\Widget\Context $context,
+        \Reverb\ProcessQueue\Helper\Task\Processor $taskprocessorHelper,
+        \Magento\Backend\Model\UrlInterface $backendUrl,
+        array $data = []
+    )
     {
-        $this->_setHeaderText();
+        $this->_taskprocessorHelper = $taskprocessorHelper;
+        $this->_backendurl = $backendUrl;
         $block_module_groupname = "ReverbSync";
 
         $this->_objectId = 'reverb_stop_product_sync_container';
         $this->setTemplate('widget/view/container.phtml');
+        $this->_headerText = 'testtt';
 
-        parent::__construct();
+        parent::__construct($context,$data);
 
         $bulk_sync_process_button = array(
-            'action_url' => Mage::getModel('adminhtml/url')->getUrl('adminhtml/ReverbSync_listings_sync/stopBulkSync'),
+            'action_url' => $this->_backendurl->getUrl('reverbsync/reverbsync_listings/sync',array('action'=>'stopBulkSync')),
             'label' => 'Stop Bulk Sync'
         );
 
         $clear_all_tasks_button = array(
-            'action_url' => Mage::getModel('adminhtml/url')->getUrl('adminhtml/ReverbSync_listings_sync/clearAllTasks'),
+            'action_url' => $this->_backendurl->getUrl('reverbsync/reverbsync_listings/sync',array('action'=>'clearAllTasks')),
             'label' => 'Clear All Sync Tasks'
         );
 
         $clear_successful_tasks_button = array(
-            'action_url' => Mage::getModel('adminhtml/url')->getUrl('adminhtml/ReverbSync_listings_sync/clearSuccessfulTasks'),
+            'action_url' => $this->_backendurl->getUrl('reverbsync/reverbsync_listings/sync',array('action'=>'clearSuccessfulTasks')),
             'label' => 'Clear Successful Sync Tasks'
         );
 
@@ -49,9 +56,9 @@ class Reverb_ReverbSync_Block_Adminhtml_Listings_Index_Syncing extends Mage_Admi
                 continue;
             }
 
-            $this->_addButton(
+            $this->addButton(
                 $button_id, array(
-                    'label' => Mage::helper($block_module_groupname)->__($button_label),
+                    'label' => __($button_label),
                     'onclick' => "document.location='" .$button_action_url . "'",
                     'level' => -1
                 )
@@ -61,12 +68,11 @@ class Reverb_ReverbSync_Block_Adminhtml_Listings_Index_Syncing extends Mage_Admi
 
     protected function _setHeaderText()
     {
-        list($completed_queue_tasks, $all_process_queue_tasks) =
-            Mage::helper('reverb_process_queue/task_processor')->getCompletedAndAllQueueTasks('listing_sync');
+        list($completed_queue_tasks, $all_process_queue_tasks) = $this->_taskprocessorHelper->getCompletedAndAllQueueTasks('listing_sync');
 
-        $completed_tasks_count = count($completed_queue_tasks);
+        $completed_tasks_count = count($completed_queue_tasks);echo '<br/>';
         $all_tasks_count = count($all_process_queue_tasks);
-        $header_text = Mage::helper('ReverbSync')->__(self::HEADER_TEXT_TEMPLATE, $completed_tasks_count, $all_tasks_count);
-        $this->_headerText = $header_text;
+        $header_text = __(sprintf(self::HEADER_TEXT_TEMPLATE, $completed_tasks_count, $all_tasks_count));
+        return 'testingone';
     }
 }

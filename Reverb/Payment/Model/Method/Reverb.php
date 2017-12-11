@@ -1,10 +1,6 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 9/4/15
- */
-
-class Reverb_Payment_Model_Method_Reverb extends Mage_Payment_Model_Method_Abstract
+namespace Reverb\Payment\Model\Method;
+class Reverb extends \Magento\Payment\Model\Method\AbstractMethod
 {
     protected $_isInitializeNeeded = false;
     protected $_canAuthorize = true;
@@ -12,27 +8,52 @@ class Reverb_Payment_Model_Method_Reverb extends Mage_Payment_Model_Method_Abstr
 
     protected $_code = 'reverbpayment';
 
-    /*
-     * Currently this is not being used as $this->_isInitializeNeeded is set to false. In the event that we want to
-     *      prevent the Magento system from notifying the customer of the order, we would need to uncomment this
-     *      method and switch $this->_isInitializeNeeded to true
-     *
-    public function initialize($paymentAction, $stateObject)
-    {
-        $stateObject->setState(Mage_Sales_Model_Order::STATE_NEW);
-        $stateObject->setStatus(Mage_Sales_Model_Order::STATE_NEW);
-        $stateObject->setIsNotified(true);
+    public function __construct(
+        \Magento\Framework\Model\Context $context,
+        \Magento\Framework\Registry $registry,
+        \Magento\Framework\Api\ExtensionAttributesFactory $extensionFactory,
+        \Magento\Framework\Api\AttributeValueFactory $customAttributeFactory,
+        \Magento\Payment\Helper\Data $paymentData,
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        \Magento\Payment\Model\Method\Logger $logger,
+        \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
+        \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
+        array $data = []
+    ) {
+        parent::__construct(
+            $context,
+            $registry,
+            $extensionFactory,
+            $customAttributeFactory,
+            $paymentData,
+            $scopeConfig,
+            $logger,
+            $resource,
+            $resourceCollection,
+            $data
+        );
+        $this->_registry = $registry;
+        $this->_paymentData = $paymentData;
+        $this->_scopeConfig = $scopeConfig;
+        $this->logger = $logger;
+        /*$this->initializeData($data);*/
     }
-    */
 
-    public function isAvailable($quote = null)
+    public function isAvailable(\Magento\Quote\Api\Data\CartInterface $quote = null)
     {
-        $transportObject = new Varien_Object();
+        $orderBeingSynced  = $this->_registry->registry(\Reverb\ReverbSync\Helper\Orders\Creation\Helper::ORDER_BEING_SYNCED_REGISTRY_KEY);
+
+        $transportObject = new \Magento\Framework\DataObject();
         $transportObject->setShouldBeAllowed(false);
 
-        Mage::dispatchEvent('should_reverb_payment_be_allowed',
-            array('transport_object' => $transportObject, 'quote' => $quote));
+        if (isset($orderBeingSynced) && is_object($orderBeingSynced))
+        {
+            $transportObject->setData('should_be_allowed', true);
+        }
 
-        return $transportObject->getShouldBeAllowed();
+        if(!$transportObject->getShouldBeAllowed()){
+            return false;
+        }
+        return parent::isAvailable($quote);
     }
 }

@@ -25,6 +25,10 @@ class Update extends \Reverb\ProcessQueue\Model\Task
 
     protected $_resourceOrder;
 
+    protected $_eventManager;
+
+    protected $_reverbLogger;
+
     public function __construct(
         \Reverb\ProcessQueue\Model\Task\Result $taskResult,
         \Magento\Framework\Stdlib\DateTime\DateTime $datetime,
@@ -34,7 +38,12 @@ class Update extends \Reverb\ProcessQueue\Model\Task
         \Reverb\ReverbSync\Model\Resource\Order $resourceOrder,
         \Reverb\ReverbSync\Model\Source\Order\Status $orderStatusSource,
         \Reverb\ReverbSync\Model\Source\Orderurl $orderCreationRetrievalUrlSource,
-        \Reverb\ReverbSync\Helper\Orders\Creation $orderCreationHelper
+        \Reverb\ReverbSync\Helper\Orders\Creation $orderCreationHelper,
+        \Magento\Store\Model\StoreManagerInterface $storemanager,
+        \Magento\Customer\Model\CustomerFactory $customer,
+        \Magento\Framework\Event\ManagerInterface $eventManager,
+        \Reverb\ReverbSync\Model\Resource\Order $syncResourceOrder,
+        \Reverb\ReverbSync\Model\Log $reverblogger
     ) {
         $this->_registry = $registry;
         $this->_taskResult = $taskResult;
@@ -44,6 +53,11 @@ class Update extends \Reverb\ProcessQueue\Model\Task
         $this->_orderStatusSource = $orderStatusSource;
         $this->_orderCreationRetrievalUrlSource = $orderCreationRetrievalUrlSource;
         $this->_orderCreationHelper = $orderCreationHelper;
+        $this->_storemanager = $storemanager;
+        $this->_customer = $customer;
+        $this->_eventManager = $eventManager;
+        $this->_syncResourceOrder = $syncResourceOrder;
+        $this->_reverbLogger = $reverblogger;
         parent::__construct($taskResult, $datetime, $context, $registry);
     }
 
@@ -75,45 +89,24 @@ class Update extends \Reverb\ProcessQueue\Model\Task
             {
                 try
                 {
-                 /*   $_objectmanager = \Magento\Framework\App\ObjectManager::getInstance();
-
-                    $email = 'test'.uniqid().'@gmail.com';
-                    $storeman = $_objectmanager->get('\Magento\Store\Model\StoreManagerInterface');
-                    $websiteId  = $storeman->getWebsite()->getWebsiteId();
-                    $customerfact = $_objectmanager->get('\Magento\Customer\Model\CustomerFactory');
-                    
-                    // Instantiate object (this is the most important part)
-                    $customer   = $customerfact->create();
-                    $customer->setWebsiteId($websiteId);
-
-                    // Preparing data for new customer
-                    $customer->setEmail($email); 
-                    $customer->setFirstname("First Name");
-                    $customer->setLastname("Last name");
-                    $customer->setPassword("password");
-
-                    $customer->save(); 
-                    $customer->sendNewAccountEmail();
-
-                    echo 'test';exit;
-*/
                     $magentoOrder = $this->_getOrderCreationHelper()->createMagentoOrder($argumentsObject);
+
                     // Get the magento order entity id from the newly created order
                     if ((!is_object($magentoOrder)) || (!$magentoOrder->getId()))
                     {
                         // If the order is not a loaded object in the database, throw an exception
                         $error_message = __(self::ERROR_MAGENTO_ORDER_NOT_CREATED, $reverb_order_number);
-                        throw new Exception($error_message);
+                        throw new \Exception($error_message);
                     }
 
                     $magento_order_entity_id = $magentoOrder->getId();
                 }
-                catch(Exception $e)
+                catch(\Exception $e)
                 {
                     // In this event, log the error and return an Abort status
-                    $error_message = __(self::EXCEPTION_CREATING_ORDER, $reverb_order_number,
-                        $e->getMessage());
-                    Mage::getSingleton('reverbSync/log')->logOrderSyncError($error_message);
+                    $error_message = __(sprintf(self::EXCEPTION_CREATING_ORDER, $reverb_order_number,
+                        $e->getMessage()));
+                    $this->_logOrderSyncError($error_message);
                     return $this->_returnAbortCallbackResult($error_message);
                 }
             }
@@ -172,10 +165,10 @@ class Update extends \Reverb\ProcessQueue\Model\Task
         try
         {
             // Start a database transaction
-            Mage::getResourceSingleton('sales/order')->beginTransaction();
+            $this->_syncResourceOrder->beginTransaction();
 
             // Fire a general event denoting that a Reverb order update transmission has been received
-            Mage::dispatchEvent('reverb_order_update',
+            $this->_eventManager->dispatch('reverb_order_update',
                 array('order_entity_id' => $magento_order_entity_id,
                       'reverb_order_status' => $reverb_order_status,
                       'reverb_order_update_arguments_object' => $argumentsObject)
@@ -183,36 +176,35 @@ class Update extends \Reverb\ProcessQueue\Model\Task
 
             // Fire an event specific to the order status transmitted by Reverb
             $event_name = 'reverb_order_status_update_' . $reverb_order_status;
-            Mage::dispatchEvent($event_name,
+            $this->_eventManager->dispatch($event_name,
                                     array('order_entity_id' => $magento_order_entity_id,
                                           'reverb_order_status' => $reverb_order_status,
                                           'reverb_order_update_arguments_object' => $argumentsObject)
             );
             // Update the reverb_order_status field on the sales_flat_order table
-            $updated_rows = Mage::getResourceSingleton('reverbSync/order')
-                                ->updateReverbOrderStatusByMagentoEntityId($magento_order_entity_id, $reverb_order_status);
+            $updated_rows = $this->_syncResourceOrder->updateReverbOrderStatusByMagentoEntityId($magento_order_entity_id, $reverb_order_status);
 
-            Mage::getResourceSingleton('sales/order')->commit();
+            $this->_syncResourceOrder->commit();
         }
-        catch(Reverb_ReverbSync_Model_Exception_Order_Update_Status_Redundant $e)
+        catch(\Reverb\ReverbSync\Model\Exception\Order\Update\Status\Redundant $e)
         {
+            $error_message = $e->getMessage();
+            $this->_logOrderSyncError($error_message);
             // Assume we have already processed this order update
-            Mage::getResourceSingleton('sales/order')->rollBack();
+            $this->_syncResourceOrder->rollBack();
             return $this->_returnSuccessCallbackResult('The order has been updated');
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
-            Mage::getResourceSingleton('sales/order')->rollBack();
+            $this->_syncResourceOrder->rollBack();
 
-            $error_message = Mage::helper('ReverbSync')
-                                ->__(self::EXCEPTION_EXECUTING_STATUS_UPDATE, $magento_order_entity_id,
-                                        $reverb_order_status, $e->getMessage());
-            Mage::getSingleton('reverbSync/log')->logOrderSyncError($error_message);
+            $error_message = __(sprintf(self::EXCEPTION_EXECUTING_STATUS_UPDATE, $magento_order_entity_id, $reverb_order_status, $e->getMessage()));
+            $this->_logOrderSyncError($error_message);
 
             return $this->_returnAbortCallbackResult($error_message);
         }
 
-        $success_message = __(self::SUCCESS_ORDER_STATUS_UPDATED, $reverb_order_status);
+        $success_message = __(sprintf(self::SUCCESS_ORDER_STATUS_UPDATED, $reverb_order_status));
         return $this->_returnSuccessCallbackResult($success_message);
     }
 
@@ -238,5 +230,10 @@ class Update extends \Reverb\ProcessQueue\Model\Task
     protected function _getOrderCreationHelper()
     {
         return $this->_orderCreationHelper;
+    }
+
+    public function _logOrderSyncError($error_message)
+    {
+        $this->_reverbLogger->logOrderSyncError($error_message);
     }
 }

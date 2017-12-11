@@ -1,9 +1,4 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 8/13/15
- * Class Reverb_ProcessQueue_Helper_Processor
- */
 namespace Reverb\ProcessQueue\Helper\Task;
 class Processor extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -187,7 +182,7 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
     public function getCompletedAndAllQueueTasks($code = null)
     {
         $allProcessQueuetaskCollection = $this->_gettaskCollectionModel($code)
-                                                ->setOrder('last_executed_at', Zend_Db_Select::SQL_DESC);;
+                                                ->setOrder('last_executed_at',\Zend_Db_Select::SQL_DESC);;
 
         if (!empty($code))
         {
@@ -198,7 +193,7 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
 
         $completedTasksCollection = $this->_gettaskCollectionModel($code)
                                             ->addStatusFilter(\Reverb\ProcessQueue\Model\Task::STATUS_COMPLETE)
-                                            ->setOrder('last_executed_at', Zend_Db_Select::SQL_DESC);
+                                            ->setOrder('last_executed_at',\Zend_Db_Select::SQL_DESC);
 
         /*if (!empty($code))
         {

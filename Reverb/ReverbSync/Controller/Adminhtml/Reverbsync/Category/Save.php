@@ -12,8 +12,10 @@ class Save extends \Magento\Backend\App\Action
     */
 	
 	public function __construct(
-        \Magento\Backend\App\Action\Context $context
+        \Magento\Backend\App\Action\Context $context,
+		\Reverb\ReverbSync\Helper\Sync\Category $categorySyncHelper
     ) {
+		$this->_categorySyncHelper = $categorySyncHelper;
         parent::__construct($context);
     }
 	
@@ -22,19 +24,18 @@ class Save extends \Magento\Backend\App\Action
     */
     public function execute()
     {
-		exit('Save action called');
-		
-		if (!$this->getRequest()->isPost())
+		$data = $this->getRequest()->getPostValue();
+		if (!$this->getRequest()->getPostValue())
         {
             $error_message = self::ERROR_SUBMISSION_NOT_POST;
-            $this->_getAdminHelper()->throwRedirectException($error_message);
+			$this->messageManager->addError($error_message);
         }
 
-        $post_array = $this->getRequest()->getPost();
+        $post_array = $this->getRequest()->getPostValue();
 
         try
         {
-            $category_map_form_element_name = $this->_getCategorySyncHelper()
+            $category_map_form_element_name = $this->_categorySyncHelper
                                                     ->getMagentoReverbCategoryMapElementArrayName();
             $category_mapping_array = isset($post_array[$category_map_form_element_name])
                                         ? $post_array[$category_map_form_element_name] : null;
@@ -42,11 +43,12 @@ class Save extends \Magento\Backend\App\Action
             {
                 // This shouldn't occur, but account for the fact where it does
                 $error_message = self::ERROR_SUBMISSION_NOT_POST;
-                throw new Exception($error_message);
+				$this->messageManager->addError($error_message);
             }
-
-            $this->_getCategorySyncHelper()->processMagentoReverbCategoryMapping($category_mapping_array);
-        }
+            $this->_categorySyncHelper->processMagentoReverbCategoryMapping($category_mapping_array);
+			$resultRedirect = $this->resultRedirectFactory->create();
+			return $resultRedirect->setPath('reverbsync/reverbsync_category/sync');
+		}
         catch(Exception $e)
         {
             $error_message = sprintf(self::EXCEPTION_CATEGORY_MAPPING, $e->getMessage());

@@ -1,18 +1,23 @@
 <?php
-/**
- * Author: Sean Dunagan (https://github.com/dunagan5887)
- * Created: 3/22/16
- */
+namespace Reverb\ReverbSync\Helper;
 
-class Reverb_ReverbSync_Helper_Category extends Mage_Core_Helper_Abstract
+class Category extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const EXCEPTION_REMOVING_CATEGORY = 'An exception occurred while attempting to remove Reverb category with id %s: %s';
 
-    public function removeCategoriesWithoutUuid()
+    public function __construct(
+        \Reverb\ReverbSync\Model\Category\Reverb $reverbCategoryModel,
+        \Reverb\ReverbSync\Model\Logger $logger
+    ) {
+        $this->_reverbCategoryModel = $reverbCategoryModel;
+        $this->_logger = $logger;
+    }
+	
+	public function removeCategoriesWithoutUuid()
     {
-        $categoriesWithoutUuid = Mage::getModel('reverbSync/category_reverb')
+        $categoriesWithoutUuid = $this->_reverbCategoryModel
                                     ->getCollection()
-                                    ->addFieldToFilter(Reverb_ReverbSync_Model_Category_Reverb::UUID_FIELD, '');
+                                    ->addFieldToFilter(\Reverb\ReverbSync\Model\Category\Reverb::UUID_FIELD, '');
 
         foreach($categoriesWithoutUuid->getItems() as $categoryWithoutUuid)
         {
@@ -24,7 +29,7 @@ class Reverb_ReverbSync_Helper_Category extends Mage_Core_Helper_Abstract
             {
                 $error_message = $this->__(self::EXCEPTION_REMOVING_CATEGORY, $categoryWithoutUuid->getId(),
                                            $e->getMessage());
-                Mage::log($error_message, null, 'reverb_category_uuid_to_slug_mapping.log', true);
+				$this->_logger->info($error_message);
             }
         }
     }

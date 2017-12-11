@@ -1,14 +1,10 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 9_16_15
- */
-
-class Reverb_ReverbSync_Block_Adminhtml_Widget_Grid_Column_Renderer_Order_Product_Sku
-    extends Reverb_ReverbSync_Block_Adminhtml_Widget_Grid_Column_Renderer_Order_Product_Abstract
+namespace Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Product;
+use Magento\Framework\DataObject;
+class Sku extends \Reverb\ReverbSync\Block\Adminhtml\Widget\Grid\Column\Renderer\Order\Product\Abstractclass
 {
-    public function _getValue(Varien_Object $row)
-    {
+    public function render(DataObject $row)
+    {   
         $magentoProduct = $this->_getMagentoProductForRow($row);
         if ((!is_object($magentoProduct)) || (!$magentoProduct->getId()))
         {
