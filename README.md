@@ -52,11 +52,13 @@ If you don't already have make & model fields in your magento installation, you 
 
 ## Installation: Part 1 - Install the App
 
-Please follow the instructions below to download and install the app. This assumes you have shell access to your server. If you have only FTP access, please download and unzip the app into /path/to/magento/htodcs/app/code/
+Please follow the instructions below to download and install the app. This assumes you have shell access to your server. If you have only FTP access, please download and unzip the app into /path/to/magento/app/code/
+
+**Command Line instructions below require update pending home repo.**
 
 ```bash
-# Where your magento lives. This is the only part you have to manually modify.
-export MAGENTO_PATH=/path/to/magento
+# Navigate to your magento root folder
+cd /path/to/magento
 
 # Download the release
 cd /tmp && wget https://github.com/reverbdotcom/magento/archive/0.9.8.tar.gz //this will depend on where the repo lives
@@ -65,7 +67,7 @@ cd /tmp && wget https://github.com/reverbdotcom/magento/archive/0.9.8.tar.gz //t
 tar zxvf 0.9.8.tar.gz //this will depend on repo name
 
 # Copy everything from the app folder into your magento app
-rsync -avzp magento-0.9.8/* $MAGENTO_PATH/htdocs/app/code/
+rsync -avzp magento-0.9.8/* /path/to/magento/app/code/
 
 # Update Magento 2 databse
 php bin/magento setup:upgrade
