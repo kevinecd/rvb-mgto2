@@ -84,7 +84,6 @@ abstract class Retrieval// extends Reverb_ReverbSync_Helper_Data
                     $error_message = __(self::EXCEPTION_QUEUE_MAGENTO_ORDER_ACTION, $order_sync_action, $e->getMessage(), json_encode($orderDataObject));
                     $this->_logError($error_message);
                     $exceptionToLog = new \Exception($error_message);
-                    Mage::logException($exceptionToLog);
                 }
             }
             $api_url_path_to_call = $this->_getNextPageOfResultsUrlPath($reverbOrdersJsonObject);
@@ -152,7 +151,8 @@ abstract class Retrieval// extends Reverb_ReverbSync_Helper_Data
         $curlResource->logRequest();
         $curlResource->close();
         
-        $this->logApiCall($api_url_path, $json_response, $this->getAPICallDescription(), $status);
+        //comment log
+        //$this->logApiCall($api_url_path, $json_response, $this->getAPICallDescription(), $status);
  
         if (!empty($curl_error_message))
         {

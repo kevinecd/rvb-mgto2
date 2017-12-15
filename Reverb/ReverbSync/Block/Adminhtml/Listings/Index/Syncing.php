@@ -73,6 +73,6 @@ class Syncing extends \Magento\Backend\Block\Widget\Container
         $completed_tasks_count = count($completed_queue_tasks);echo '<br/>';
         $all_tasks_count = count($all_process_queue_tasks);
         $header_text = __(sprintf(self::HEADER_TEXT_TEMPLATE, $completed_tasks_count, $all_tasks_count));
-        return 'testingone';
+        return $header_text;
     }
 }

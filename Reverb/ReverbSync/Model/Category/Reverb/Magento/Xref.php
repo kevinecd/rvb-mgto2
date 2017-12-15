@@ -1,8 +1,4 @@
 <?php
-/**
- * Author: Sean Dunagan (https://github.com/dunagan5887)
- * Created: 3/21/16
- */
 namespace Reverb\ReverbSync\Model\Category\Reverb\Magento;
 
 class Xref extends \Magento\Framework\Model\AbstractModel

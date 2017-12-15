@@ -97,11 +97,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
                 {
                     $this->_syncImage->queueImageSyncForProductGalleryImages($product);
                 }
-                catch(Exception $e)
+                catch(\Exception $e)
                 {
                     $listingWrapper->setReverbWebUrl($reverb_web_url);
                     $error_message = __(sprintf(self::ERROR_LISTING_IMAGE_SYNC, $e->getMessage()));
-                    throw new Reverb_ReverbSync_Model_Exception_Listing_Image_Sync($error_message);
+                    throw new \Reverb\ReverbSync\Model\Exception\Listing\Image\Sync($error_message);
                 }
             }
             else
@@ -112,28 +112,26 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
 
             $listingWrapper->setReverbWebUrl($reverb_web_url);
         }
-        // Defining specific catch block for Reverb_ReverbSync_Model_Exception_Status_Error for future customization
-        catch(Reverb_ReverbSync_Model_Exception_Status_Error $e)
+        catch(\Reverb\ReverbSync\Model\Exception\Status\Error $e)
         {
-            Mage::getSingleton('reverbSync/log')->setSessionErrorIfAdminIsLoggedIn($e->getMessage());
+            $this->_getLogSingleton()->logReverbMessage($e->getMessage());
 
             // Log Exception on reports row
             $listingWrapper->setSyncDetails($e->getMessage());
             $listingWrapper->setStatus(self::LISTING_STATUS_ERROR);
         }
-        catch(Reverb_ReverbSync_Model_Exception_Listing_Image_Sync $e)
+        catch(\Reverb\ReverbSync\Model\Exception\Listing\Image\Sync $e)
         {
-            Mage::getSingleton('reverbSync/log')->setSessionErrorIfAdminIsLoggedIn($e->getMessage());
+            $this->_getLogSingleton()->logReverbMessage($e->getMessage());
 
             // Log Exception on reports row
             $listingWrapper->setSyncDetails($e->getMessage());
             // In this event, the actual listing creation succeeded, so set the status to success
             $listingWrapper->setStatus(self::LISTING_STATUS_SUCCESS);
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
-            Mage::getSingleton('reverbSync/log')->setSessionErrorIfAdminIsLoggedIn($e->getMessage());
-
+            $this->_getLogSingleton()->logReverbMessage($e->getMessage());
             // Log Exception on reports row
             $listingWrapper->setSyncDetails($e->getMessage());
             $listingWrapper->setStatus(self::LISTING_STATUS_ERROR);
@@ -174,9 +172,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
         $curlResource->logRequest();
         // Close the CURL Resource
         $curlResource->close();
-        // Log the response
-        $this->_logApiCall($content, $post_response_as_json, 'createObject', $status);
-        // Decode the json response
+       
+        //comment log 
+        //$this->_logApiCall($content, $post_response_as_json, 'createObject', $status);
+        
         $response = json_decode($post_response_as_json, true);
 
         if (is_null($response))
@@ -197,11 +196,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
                 if (!empty($curl_error_message))
                 {
                     $listingWrapper->setSyncDetails($curl_error_message);
-                    throw new Exception($curl_error_message);
+                    throw new \Exception($curl_error_message);
                 }
                 $error_message = $response['message'];
                 $listingWrapper->setSyncDetails($error_message);
-                throw new Exception($error_message);
+                throw new \Exception($error_message);
             }
         }
 
@@ -244,7 +243,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
         $curlResource->close();
         // Log the response
         $params = "state=all&sku=" . $magento_sku;
-        $this->_logApiCall($params, $json_response, 'findReverbListingUrlByMagentoSku', $status);
+        //comment log
+        //$this->_logApiCall($params, $json_response, 'findReverbListingUrlByMagentoSku', $status);
 
         $response = json_decode($json_response, true);
 
@@ -310,8 +310,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
         $curlResource->logRequest();
         // Close the CURL Resource
         $curlResource->close();
-        // Log the response
-        $this->_logApiCall($content, $put_response_as_json, 'updateObject', $status);
+        
+        //comment log
+        //$this->_logApiCall($content, $put_response_as_json, 'updateObject', $status);
 
         $response = json_decode($put_response_as_json, true);
 
@@ -321,13 +322,13 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
             if (!empty($curl_error_message))
             {
                 $listingWrapper->setSyncDetails($curl_error_message);
-                throw new Exception($curl_error_message);
+                throw new \Exception($curl_error_message);
             }
 
             $error_message = $response['message'];
             $listingWrapper->setSyncDetails($error_message);
 
-            throw new Exception($error_message);
+            throw new \Exception($error_message);
         }
 
         $listingWrapper->setSyncDetails(null);
@@ -358,9 +359,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper implements \Reve
         $curlResource->logRequest();
         // Close the CURL Resource
         $curlResource->close();
-        // Log the response
-        $this->_logApiCall($content_body, $response_as_json, $this->getApiLogFileSuffix(), $status);
-        // Decode the json response
+        
+        //comment log
+        //$this->_logApiCall($content_body, $response_as_json, $this->getApiLogFileSuffix(), $status);
+
+        
         $response_as_array = json_decode($response_as_json, true);
         // Ensure the status code is of the form 2xx
         if (!$this->_isStatusSuccessful($status))

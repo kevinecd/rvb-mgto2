@@ -1,9 +1,4 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 9/14/15
- */
-
 require_once('Reverb/ProcessQueue/controllers/Adminhtml/ProcessQueue/IndexController.php');
 class Reverb_ProcessQueue_Adminhtml_ProcessQueue_Unique_IndexController
   extends Reverb_ProcessQueue_Adminhtml_ProcessQueue_IndexController

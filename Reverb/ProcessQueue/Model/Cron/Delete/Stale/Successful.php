@@ -1,10 +1,6 @@
 <?php
-/**
- * Author: Sean Dunagan (https://github.com/dunagan5887)
- * Created: 12/9/15
- */
-
-class Reverb_ProcessQueue_Model_Cron_Delete_Stale_Successful
+namespace Reverb\ProcessQueue\Model\Cron\Delete\Stale;
+class Successful
 {
     const CRON_UNCAUGHT_EXCEPTION = 'Error deleting stale success tasks from the Reverb Process Queue: %s';
 
@@ -21,6 +17,21 @@ class Reverb_ProcessQueue_Model_Cron_Delete_Stale_Successful
      */
     protected $_is_stale_task_deletion_enabled = null;
 
+    protected $_scopeConfig;
+
+    protected $_reverbLogger;
+
+    protected $_processqueueTaskHelper;
+
+    public function __construct(
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        \Reverb\ReverbSync\Model\Log $reverbLogger,
+        \Reverb\ProcessQueue\Helper\Task $processqueueTaskHelper
+    ){
+        $this->_scopeConfig = $scopeConfig;
+        $this->_reverbLogger = $reverbLogger;
+        $this->_processqueueTaskHelper = $processqueueTaskHelper;
+    }
     /**
      * A nightly cronjob to delete tasks from the system which are "stale", meaning have been completed for a period of
      *  time defined in the admin panel
@@ -32,17 +43,14 @@ class Reverb_ProcessQueue_Model_Cron_Delete_Stale_Successful
             // See if the nightly cronjob to delete stale successful tasks has been enabled
             if ($this->_isStaleTaskDeletionEnabled())
             {
-                $taskHelper = Mage::helper('reverb_process_queue/task');
-                /* @var Reverb_ProcessQueue_Helper_Task $taskHelper */
-                $taskHelper->deleteStaleSuccessfulTasks();
+                $taskHelper = $this->_processqueueTaskHelper;
+                $rowdeleted = $taskHelper->deleteStaleSuccessfulTasks();
             }
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $error_message = sprintf(self::CRON_UNCAUGHT_EXCEPTION, $e->getMessage());
-            Mage::log($error_message, null, 'reverb_process_queue_error.log');
-            $exceptionToLog = new Exception($error_message);
-            Mage::logException($exceptionToLog);
+            $this->_reverbLogger->logReverbMessage($message);
         }
     }
 
@@ -53,10 +61,9 @@ class Reverb_ProcessQueue_Model_Cron_Delete_Stale_Successful
     {
         if (is_null($this->_is_stale_task_deletion_enabled))
         {
-            $stale_task_deletion_is_enabled = Mage::getStoreConfig(self::STALE_TASK_DELETION_ENABLED_CONFIG_PATH);
+            $stale_task_deletion_is_enabled = $this->_scopeConfig->getValue(self::STALE_TASK_DELETION_ENABLED_CONFIG_PATH);
             $this->_is_stale_task_deletion_enabled = boolval($stale_task_deletion_is_enabled);
         }
-
         return $this->_is_stale_task_deletion_enabled;
     }
 }

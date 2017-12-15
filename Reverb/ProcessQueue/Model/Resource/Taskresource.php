@@ -1,7 +1,4 @@
 <?php
-/**
- * Class Reverb\ProcessQueue\Model\Resource\Task
- */
 namespace Reverb\ProcessQueue\Model\Resource;
 use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
 class Taskresource extends AbstractDb{

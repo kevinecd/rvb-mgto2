@@ -179,7 +179,8 @@ class Curl
         }
 
         $string_to_log = sprintf(self::REQUEST_LOG_TEMPLATE, $http_method_log, $http_header_string_to_log, $url_to_log, $body_to_log);
-        $this->_logApiRequestMessage($string_to_log);
+        //comment log
+        //$this->_logApiRequestMessage($string_to_log);
 
         $status = $this->getRequestHttpCode();
         $status_as_int = intval($status);
@@ -187,7 +188,8 @@ class Curl
         {
             $curl_error = $this->getCurlErrorMessage();
             $error_string_to_log = sprintf(self::POST_ERROR_LOG_TEMPLATE, $curl_error);
-            $this->_logApiRequestMessage($error_string_to_log);
+            //comment log
+            //$this->_logApiRequestMessage($error_string_to_log);
         }
     }
 

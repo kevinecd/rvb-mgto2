@@ -20,9 +20,11 @@ abstract class Abstractclass extends ModelLockedcronabstractclass implements Mod
     protected $_getIoAdapter;
 
     public function __construct(
-        \Reverb\Io\Model\Io\File $getIoAdapter
+        \Reverb\Io\Model\Io\File $getIoAdapter,
+        \Magento\Framework\Filesystem\DirectoryList $dir
     ) {
         $this->getIoAdapter = $getIoAdapter;
+        $this->_dir = $dir;
     }
 
     public function attemptLockForThread($thread_number)
@@ -39,7 +41,7 @@ abstract class Abstractclass extends ModelLockedcronabstractclass implements Mod
             $ioAdapter->open(array('path' => $lock_file_directory));
 
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $error_message = sprintf(self::ERROR_EXCEPTION_WHILE_CHANGING_DIRECTORY, $lock_file_directory, $full_lock_file_name, $e->getMessage());
             $this->_logError($error_message);
@@ -53,7 +55,7 @@ abstract class Abstractclass extends ModelLockedcronabstractclass implements Mod
         {
             $ioAdapter->streamOpen($lock_file_path, 'w+', self::LOCK_FILE_PERMISSIONS);
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $error_message = sprintf(self::ERROR_EXCEPTION_WHILE_OPENING_LOCK_FILE, $lock_file_path, $e->getMessage());
             $this->_logError($error_message);
@@ -67,7 +69,7 @@ abstract class Abstractclass extends ModelLockedcronabstractclass implements Mod
                 return false;
             }
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $error_message = sprintf(self::ERROR_EXCEPTION_WHILE_SECURING_LOCK_FILE, $lock_file_path, $e->getMessage());
             $this->_logError($error_message);
@@ -87,7 +89,7 @@ abstract class Abstractclass extends ModelLockedcronabstractclass implements Mod
             $ioAdapter->streamUnlock();
             $ioAdapter->streamClose();
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             return false;
         }
@@ -102,5 +104,16 @@ abstract class Abstractclass extends ModelLockedcronabstractclass implements Mod
             $this->_ioAdapter = Mage::getModel('reverb_io/io_file')->setAllowCreateFolders(true);
         }*/
         return $this->getIoAdapter;
+    }
+
+    public function getCheckCreateLogFile(){
+        $path = $this->_dir->getPath('var') . DIRECTORY_SEPARATOR . 'log';
+        $filepath = $path.DIRECTORY_SEPARATOR.'reverb_sync.log';
+        if(!file_exists($filepath)){
+            $this->getIoAdapter->mkdir($path, 0775);
+            $fp = fopen($filepath,'a+');
+            fclose($fp);
+            chmod($filepath,0777);
+        }
     }
 }

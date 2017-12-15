@@ -34,8 +34,7 @@ class Actontask extends \Magento\Backend\App\Action
     }
 
     public function execute(){
-        $_controller_description = 'processqueue_actontask';//$this->getControllerDescription();
-
+        $_controller_description = 'Processqueue Actontask';
         $_quote_task = $this->_modelTaskUnique;
 
         $task_id = $this->getRequest()->getParam('task_id');
@@ -45,6 +44,10 @@ class Actontask extends \Magento\Backend\App\Action
             $_quote_task = $this->_modelTask;
             $_controller_description = $_controller_description.' '.$type;
             $redirecturl = 'reverbsync/reverbsync_orders/sync';
+        }
+        if($type=='shipment_tracking_sync'){
+            $_controller_description = $_controller_description.' '.$type;
+            $redirecturl = 'reverbsync/reverbsync_orders_sync/unique';
         }
         $_quote_task = $_quote_task->load($task_id);
         

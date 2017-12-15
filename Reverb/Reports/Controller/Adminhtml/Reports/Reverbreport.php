@@ -23,7 +23,7 @@ use Magento\Framework\View\Result\PageFactory;
 	    }
 
         public function execute(){
-            $resultPage = $this->resultPageFactory->create();
+        	$resultPage = $this->resultPageFactory->create();
 	        $resultPage->setActiveMenu('Reverb_ReverbSync::reverb_listings_sync');
 	        $resultPage->getConfig()->getTitle()->prepend((__('Reverb Listing Sync')));
 	        $resultPage->getConfig()->getTitle()->prepend((__('Reverb Listing Sync')));

@@ -18,23 +18,24 @@ class Sync extends Cronabstract implements Croninterface
         \Magento\Framework\Filesystem\DirectoryList $dir,
         \Reverb\Io\Model\Io\File $getIoAdapter,
         \Reverb\ProcessQueue\Helper\Task\Processor $taskprocessor,
-        \Reverb\ReverbSync\Model\Logger $logger,
+        \Reverb\ReverbSync\Model\Logger $reverblogger,
         array $data = []
     ) {
-        parent::__construct($getIoAdapter, $data);
+        parent::__construct($getIoAdapter, $dir, $data);
         $this->getIoAdapter = $getIoAdapter;
         $this->_taskProcessor = $taskprocessor;
         $this->_dir = $dir;
-        $this->_logger = $logger;
+        $this->_logger = $reverblogger;
     }
 
     public function executeCron()
     {
         try
         {
+            $this->_logError('check listing cron is running');
             $this->_taskProcessor->processQueueTasks('listing_sync');
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $error_message = sprintf(self::CRON_UNCAUGHT_EXCEPTION, $e->getMessage());
             $this->_logger->info('file: '.__FILE__.',function = '.__FUNCTION__.', error = '.$error_message);

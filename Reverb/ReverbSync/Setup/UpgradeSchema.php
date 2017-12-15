@@ -19,9 +19,9 @@ class UpgradeSchema implements UpgradeSchemaInterface
         $installer = $setup;
         $installer->startSetup();
         
-		if (version_compare($context->getVersion(), '1.0.3') < 0)
+		if (version_compare($context->getVersion(), '1.0.2', '<'))
 		{
-			$objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+            $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
 			$remapHelper = $objectManager->create('Reverb\ReverbSync\Helper\Category\Remap')->remapReverbCategories();
 			$objectManager->create('Reverb\ReverbSync\Helper\Category')->removeCategoriesWithoutUuid();
 		}

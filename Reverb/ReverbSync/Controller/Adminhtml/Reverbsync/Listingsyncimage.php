@@ -30,6 +30,7 @@ use Magento\Framework\View\Result\PageFactory;
         	//$syncobj = $objectManager->create('Magento\Catalog\Model\Product');
         	$syncobj = $objectManager->create('Reverb\ReverbSync\Model\Cron\Listings\Images\Sync');
         	$syncobj->attemptCronExecution();
+            echo 'success';
         	exit; 
         	} catch(\Exception $e){
         		echo 'logging error = ';

@@ -25,6 +25,7 @@ class Listingsyncorder extends \Magento\Backend\App\Action{
     	//$syncobj = $objectManager->create('Magento\Catalog\Model\Product');
     	$syncobj = $objectManager->create('Reverb\ReverbSync\Model\Cron\Orders\Update');
     	$syncobj->attemptCronExecution();
+        echo 'success';
     	exit; 
     	} catch(\Exception $e){
     		echo 'logging error = ';

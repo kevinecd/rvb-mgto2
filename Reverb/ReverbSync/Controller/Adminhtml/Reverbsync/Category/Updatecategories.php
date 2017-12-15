@@ -1,43 +1,43 @@
 <?php
 namespace Reverb\ReverbSync\Controller\Adminhtml\Reverbsync\Category;
-
+use Magento\Backend\App\Action\Context;
+use Magento\Framework\View\Result\PageFactory;
+use Magento\Framework\Controller\ResultFactory;
 class Updatecategories extends \Magento\Backend\App\Action
 {
 	const EXCEPTION_UPDATING_REVERB_CATEGORIES = 'An exception occurred while updating the Reverb categories in the system: %s';
     const SUCCESS_UPDATED_LISTINGS = 'Reverb category update completed';
 	
-	/**
-     * @param \Magento\Backend\App\Action\Context $context
-     
-    */
-	
-	public function __construct(
-        \Magento\Backend\App\Action\Context $context
+	 /**
+     * @var PageFactory
+     */
+    protected $resultPageFactory;
+
+    protected $_categoryhelper;
+
+    protected $_;
+    
+    public function __construct(Context $context, PageFactory $resultPageFactory,
+        \Reverb\ReverbSync\Helper\Category\Remap $remapcategory,
+        \Reverb\ReverbSync\Helper\Category $categoryHelper,
+        \Magento\Framework\Message\ManagerInterface $messageManager
     ) {
         parent::__construct($context);
+        $this->resultPageFactory = $resultPageFactory;
+        $this->_remapCategory = $remapcategory;
+        $this->_categoryhelper = $categoryHelper;
+        $this->_messageManager = $messageManager;
     }
-	
-	/*
-    * Send all selected customers to emma , send all if none selected
-    */
-    public function execute()
-    {
-		exit('Updatecategories action called');
-		try
-        {
-            $categoryUpdateSyncHelper = Mage::helper('ReverbSync/sync_category_update');
-            /* @var $categoryUpdateSyncHelper Reverb_ReverbSync_Helper_Sync_Category_Update */
-            $categoryUpdateSyncHelper->updateReverbCategoriesFromApi();
-        }
-        catch(Exception $e)
-        {
-            $error_message = $this->__(self::EXCEPTION_UPDATING_REVERB_CATEGORIES, $e->getMessage());
-            Mage::getSingleton('reverbSync/log')->logCategoryMappingError($error_message);
-            $this->_setSessionErrorAndRedirect($error_message);
-        }
 
-        Mage::getSingleton('adminhtml/session')->addSuccess($this->__(self::SUCCESS_UPDATED_LISTINGS));
+    public function execute(){
 
-        $this->_redirect('*/*/index');
-	}
+        /*$categoryUpdateSyncHelper = Mage::helper('ReverbSync/sync_category_update');
+        $categoryUpdateSyncHelper->updateReverbCategoriesFromApi();*/
+        $this->_remapCategory->remapReverbCategories();
+        $this->_categoryhelper->removeCategoriesWithoutUuid();
+        $this->_messageManager->addSuccess(__(self::SUCCESS_UPDATED_LISTINGS));
+        $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
+        $resultRedirect->setUrl($this->_redirect->getRefererUrl());
+        return $resultRedirect;
+    }
 }

@@ -28,16 +28,21 @@ class Remap extends \Magento\Framework\App\Helper\AbstractHelper
      * @param \Reverb\ReverbSync\Model\Category\Reverb $reverbCategoryModel
      * @param \Reverb\ReverbSync\Model\Category\Magento\Reverb\Mapping $reverbCategoryMappingModel
      */
-	 
+	public static $i=0; 
+
 	public function __construct(
         \Magento\Framework\App\Helper\Context $context,
 		\Reverb\ReverbSync\Helper\Api\Adapter\Category $categoryAdapterHelper,
 		\Reverb\ReverbSync\Model\Category\Reverb $reverbCategoryModel,
-		\Reverb\ReverbSync\Model\Category\Magento\Reverb\Mapping $reverbCategoryMappingModel
+        \Reverb\ReverbSync\Model\Category\ReverbFactory $reverbCategoryFactory,
+		\Reverb\ReverbSync\Model\Category\Magento\Reverb\Mapping $reverbCategoryMappingModel,
+        \Reverb\ReverbSync\Model\Log $reverbLogger
     ) {
 		$this->_categoryAdapterHelper = $categoryAdapterHelper;
 		$this->_reverbCategoryModel = $reverbCategoryModel;
+        $this->_reverbCategoryFactory = $reverbCategoryFactory;
 		$this->_reverbCategoryMappingModel = $reverbCategoryMappingModel;
+        $this->_reverbLogger = $reverbLogger;
         parent::__construct($context);
     }
 
@@ -48,22 +53,28 @@ class Remap extends \Magento\Framework\App\Helper\AbstractHelper
             // Attempt to retrieve the updated Reverb categories list
             $reverb_categories_as_array = $this->_categoryAdapterHelper->executeCategoryAPIFetch();
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             // This should not occur, but in the event that it does the client will have to manually remap
             //      their categories after clicking the "Update Reverb Categories" button in the admin panel
-            $error_message = __(self::EXCEPTION_CATEGORY_FETCH_API, $e->getMessage());
-            Mage::getSingleton('reverbSync/log')->logCategoryMappingError($error_message);
-            return;
+            $error_message = __(sprintf(self::EXCEPTION_CATEGORY_FETCH_API, $e->getMessage()));
+            $this->_reverbLogger->logCategoryMappingError($error_message);
         }
-
+        /*echo 'test';
+        echo count($reverb_categories_as_array);
+        echo 'test';
+        echo '<pre><br/>';
+        $i=0;*/
         foreach($reverb_categories_as_array as $reverb_category_data_array)
         {
             try
             {
+             /*   $i++;
+                echo $reverb_category_data_array['id'].' ,name= '.$reverb_category_data_array['name'];
+                echo '<br/>';*/
                 $this->_processCategory($reverb_category_data_array);
             }
-            catch(Exception $e)
+            catch(\Exception $e)
             {
                 // Do nothing in this case
             }
@@ -77,11 +88,12 @@ class Remap extends \Magento\Framework\App\Helper\AbstractHelper
     protected function _processCategory($reverb_category_data_array)
     {
         $reverbCategory = $this->_getReverbCategoryBySlugs($reverb_category_data_array);
+
         $query_category_mappings_to_preserve = $this->_updateOrCreateReverbCategory($reverbCategory,
                                                                                     $reverb_category_data_array);
         if ($query_category_mappings_to_preserve)
         {
-            $this->_preserveCategoryMapping($reverbCategory);
+            //$this->_preserveCategoryMapping($reverbCategory);
         }
     }
 
@@ -102,7 +114,7 @@ class Remap extends \Magento\Framework\App\Helper\AbstractHelper
                     $reverb_category_uuid = $reverbCategory->getUuid();
                     $this->_createNewCategoryMapping($reverb_category_uuid, $magento_category_id);
                 }
-                catch(Exception $e)
+                catch(\Exception $e)
                 {
                     // Do nothing in this event since this will occur during a migration script
                     // In this event the client will have to manually re-map their category
@@ -122,7 +134,7 @@ class Remap extends \Magento\Framework\App\Helper\AbstractHelper
         $reverb_category_uuid = isset($reverb_category_data_array['uuid']) ? $reverb_category_data_array['uuid'] : null;
         if(empty($reverb_category_uuid))
         {
-            throw new Exception('Missing uuid');
+            throw new \Exception('Missing uuid');
         }
         $reverb_parent_category_uuid = isset($reverb_category_data_array['root_uuid'])
                                         ? $reverb_category_data_array['root_uuid'] : null;
@@ -144,7 +156,7 @@ class Remap extends \Magento\Framework\App\Helper\AbstractHelper
         else
         {
             // Create a new Reverb Category Row
-            $reverbCategory = $this->_reverbCategoryModel;
+            $reverbCategory = $this->_reverbCategoryFactory->create();
             $reverbCategory->setData(\Reverb\ReverbSync\Model\Category\Reverb::NAME_FIELD, $category_name);
             $product_type_slug = isset($reverb_category_data_array['product_type_slug'])
                                     ? $reverb_category_data_array['product_type_slug'] : '';
@@ -158,7 +170,7 @@ class Remap extends \Magento\Framework\App\Helper\AbstractHelper
             $query_category_mappings_to_preserve = false;
         }
         $reverbCategory->save();
-
+        
         return $query_category_mappings_to_preserve;
     }
 
