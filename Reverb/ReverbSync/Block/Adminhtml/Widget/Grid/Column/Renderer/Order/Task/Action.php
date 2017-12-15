@@ -13,8 +13,8 @@ class Action extends \Magento\Backend\Block\Widget\Grid\Column\Renderer\Abstract
         {
             return '';
         }
-         $actionurl = "<a href='" . $this->getUrl('reverbprocessqueue/processqueue/actontask',['task_id'=> $row->getId(),'type'=>'order_update']) . "'>";
-        $actionurl .= __('Execute'); 
+        $actionurl = "<a href='" . $this->getUrl('reverbprocessqueue/processqueue/actontask',['task_id'=> $row->getId(),'type'=>$row->getCode()]) . "'>";
+        $actionurl .= __('Execute');
         $actionurl .= "</a>";
         return $actionurl;
     }

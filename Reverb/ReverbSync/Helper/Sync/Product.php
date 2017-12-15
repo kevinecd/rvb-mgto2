@@ -29,13 +29,17 @@ class Product  extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Reverb\ReverbSync\Helper\Data $reverbSyncDatahelper,
         \Reverb\Base\Helper\Product $baseHelperProduct,
-        \Reverb\ReverbSync\Helper\Admin $adminHelper
+        \Reverb\ReverbSync\Helper\Admin $adminHelper,
+        \Reverb\ProcessQueue\Model\Resource\Taskresource $taskResource ,
+        \Reverb\Reports\Model\Resource\Reverbreport $reverbreportResource
     ) {
         $this->_taskProcessor = $taskProcessor;
         $this->_productRepository = $productRepository;
         $this->reverbSyncDatahelper = $reverbSyncDatahelper;
         $this->_baseHelperProduct = $baseHelperProduct;
         $this->_adminHelper = $adminHelper;
+        $this->_taskResource = $taskResource;
+        $this->_reverbreportResource = $reverbreportResource;
     }
 
 
@@ -165,13 +169,13 @@ class Product  extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function deleteAllListingSyncTasks()
     {
-        $resourceSingleton = Mage::getResourceSingleton('reverbSync/task_listing');
+        $resourceSingleton = $this->_taskResource;
         return $resourceSingleton->deleteAllListingSyncTasks();
     }
 
     public function deleteAllReverbReportRows()
     {
-        $resourceSingleton = Mage::getResourceSingleton('reverb_reports/reverbreport');
+        $resourceSingleton = $this->_reverbreportResource;
         return $resourceSingleton->deleteAllReverbReportRows();
     }
 

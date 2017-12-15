@@ -9,16 +9,9 @@ namespace Reverb\ReverbSync\Block\Adminhtml\Listings;
 
 class Imagesync extends \Magento\Backend\Block\Widget\Grid\Container{
 
- /**
-     * @var \Magento\Catalog\Model\Product\TypeFactory
-     */
-    protected $_typeFactory;
+    const BUTTON_ACTION_TEMPLATE = "confirmSetLocation('%s', '%s')";
 
-    /**
-     * @var \Magento\Catalog\Model\ProductFactory
-     */
-    protected $_productFactory;
-
+    protected $_backendUrl;
     /**
      * @param \Magento\Backend\Block\Widget\Context $context
      * @param \Magento\Catalog\Model\Product\TypeFactory $typeFactory
@@ -27,14 +20,12 @@ class Imagesync extends \Magento\Backend\Block\Widget\Grid\Container{
      */
     public function __construct(
         \Magento\Backend\Block\Widget\Context $context,
-        \Magento\Catalog\Model\Product\TypeFactory $typeFactory,
-        \Magento\Catalog\Model\ProductFactory $productFactory,
+        \Magento\Backend\Model\UrlInterface $backendUrl,
         array $data = []
     ) {
-        $this->_productFactory = $productFactory;
-        $this->_typeFactory = $typeFactory;
-
         parent::__construct($context, $data);
+        $this->_backendUrl = $backendUrl;
+        $this->_addClearTasksButtons();
     }
 
      /**
@@ -56,68 +47,57 @@ class Imagesync extends \Magento\Backend\Block\Widget\Grid\Container{
      */
     protected function _prepareLayout()
     {
-        $addButtonProps = [
+        /*$addButtonProps = [
             'id' => 'clear_all_tasks',
             'label' => __('Clear all tasks'),
             'class' => 'clear_task button btn',
-            'button_class' => 'button',
-          //  'class_name' => 'Magento\Backend\Block\Widget\Button\SplitButton',
-           // 'options' => $this->_getAddProductButtonOptions(),
+            'button_class' => 'button'
         ];
-        $this->buttonList->add('clear_all_tasks', $addButtonProps);
+        $this->buttonList->add('clear_all_tasks', $addButtonProps);*/
 
         return parent::_prepareLayout();
     }
 
-    /**
-     * Retrieve options for 'Add Product' split button
-     *
-     * @return array
-     */
-    protected function _getAddProductButtonOptions()
+    public function _addClearTasksButtons()
     {
-        $splitButtonOptions = [];
-        $types = $this->_typeFactory->create()->getTypes();
-        uasort(
-            $types,
-            function ($elementOne, $elementTwo) {
-                return ($elementOne['sort_order'] < $elementTwo['sort_order']) ? -1 : 1;
-            }
+        $buttons_to_render = array();
+        $task_code_param = 'listing_image_sync';
+        $clear_all_tasks_action = 'reverbprocessqueue/processqueue/index';
+
+        $clear_all_tasks_button = array(
+            'action_url' => $this->_backendUrl->getUrl($clear_all_tasks_action,
+                                                                        array('task_codes' => $task_code_param,'type'=>'clearAllTasksAction')
+                                                                    ),
+            'label' => 'Clear All Tasks',
+            'confirm_message' => 'Are you sure you want to clear all tasks?'
         );
 
-        foreach ($types as $typeId => $type) {
-            $splitButtonOptions[$typeId] = [
-                'label' => __($type['label']),
-                'onclick' => "setLocation('" . $this->_getProductCreateUrl($typeId) . "')",
-                'default' => \Magento\Catalog\Model\Product\Type::DEFAULT_TYPE == $typeId,
-            ];
+        $clear_successful_tasks_action = 'reverbprocessqueue/processqueue/index';
+        $clear_successful_tasks_button = array(
+            'action_url' => $this->_backendUrl->getUrl($clear_successful_tasks_action,
+                                                                        array('task_codes' => $task_code_param,'type'=>'clearSuccessfulTasksAction')
+                                                                    ),
+            'label' => 'Clear Successful Sync Tasks',
+            'confirm_message' => 'Are you sure you want to clear all successful tasks?'
+        );
+
+        $buttons_to_render['clear_all_sync_tasks'] = $clear_all_tasks_button;
+        $buttons_to_render['clear_successful_sync_tasks'] = $clear_successful_tasks_button;
+
+        foreach ($buttons_to_render as $button_id => $button)
+        {
+            $label = __($button['label']);
+            $confirm_message = __($button['confirm_message']);
+            $action_url = $button['action_url'];
+            $onclick = sprintf(self::BUTTON_ACTION_TEMPLATE, $confirm_message, $action_url);
+
+            $this->addButton(
+                $button_id, array(
+                    'label' => __($label),
+                    'onclick' => $onclick,
+                    'level' => -1
+                )
+            );
         }
-
-        return $splitButtonOptions;
     }
-
-    /**
-     * Retrieve product create url by specified product type
-     *
-     * @param string $type
-     * @return string
-     */
-    protected function _getProductCreateUrl($type)
-    {
-        return $this->getUrl(
-            'catalog/*/new',
-            ['set' => $this->_productFactory->create()->getDefaultAttributeSetId(), 'type' => $type]
-        );
-    }
-
-    /**
-     * Check whether it is single store mode
-     *
-     * @return bool
-     */
-   /* public function isSingleStoreMode()
-    {
-        return $this->_storeManager->isSingleStoreMode();
-    }*/
-
 }

@@ -1,15 +1,11 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 10/26/15
- */
 namespace Reverb\ReverbSync\Model\Resource\Category\Reverb;
 
 class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection
 {
     protected function _construct()
     {
-        $this->_init('Reverb\ReverbSync\Model\Category\Reverb','Reverb\ReverbSync\Model\Resource\Category\Reverb');
+        $this->_init('\Reverb\ReverbSync\Model\Category\Reverb','\Reverb\ReverbSync\Model\Resource\Category\Reverb');
         //$this->_init('reverbSync/category_reverb');
     }
 
@@ -26,7 +22,7 @@ class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\Ab
             $category_uuid = array($category_uuid);
         }
 
-        $this->addFieldToFilter(Reverb_ReverbSync_Model_Category_Reverb::UUID_FIELD, array('in' => $category_uuid));
+        $this->addFieldToFilter(\Reverb\ReverbSync\Model\Category\Reverb::UUID_FIELD, array('in' => $category_uuid));
         return $this;
     }
 }

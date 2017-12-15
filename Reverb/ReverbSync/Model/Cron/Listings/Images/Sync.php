@@ -19,7 +19,7 @@ class Sync extends Cronabstract implements Croninterface
          \Reverb\Io\Model\Io\File $getIoAdapter,
         array $data = []
     ) {
-        parent::__construct($getIoAdapter, $data);
+        parent::__construct($getIoAdapter, $dir, $data);
         $this->getIoAdapter = $getIoAdapter;
         $this->_taskprocessorUnique = $taskprocessorUnique;
         $this->_dir = $dir;
@@ -30,9 +30,10 @@ class Sync extends Cronabstract implements Croninterface
     {
         try
         {
+            $this->_logError('check Image sync cron is running');
             $this->_taskprocessorUnique->processQueueTasks('listing_image_sync');
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $error_message = sprintf(self::CRON_UNCAUGHT_EXCEPTION, $e->getMessage());
             $this->_logger->info('file: '.__FILE__.',function = '.__FUNCTION__.', error = '.$error_message);

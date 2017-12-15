@@ -1,10 +1,5 @@
 <?php
-/**
- * Author: Sean Dunagan
- * Created: 10/26/15
- */
 namespace Reverb\ReverbSync\Helper\Sync;
-
 class Category extends \Magento\Framework\App\Helper\AbstractHelper
 {
     const ERROR_NO_REVERB_CATEGORIES_MAPPED = 'Skipping; no category map';
@@ -96,7 +91,7 @@ class Category extends \Magento\Framework\App\Helper\AbstractHelper
             if ($this->reverbCategoriesAreRequiredForListing())
             {
                 $error_message = $this->__(self::ERROR_NO_REVERB_CATEGORIES_MAPPED);
-                throw new Reverb_ReverbSync_Model_Exception_Category_Mapping($error_message);
+                throw new \Reverb\ReverbSync\Model\Exception\Category\Mapping($error_message);
             }
             // Return without modifying the $fieldsArray
             return $fieldsArray;
@@ -113,14 +108,14 @@ class Category extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function sortReverbCategoriesByLevelDescending(array $product_reverb_category_objects_array)
     {
-        usort($product_reverb_category_objects_array, 'Reverb_ReverbSync_Helper_Sync_Category::compareReverbCategoryLevelDescending');
+        usort($product_reverb_category_objects_array, '\Reverb\ReverbSync\Helper\Sync\Category::compareReverbCategoryLevelDescending');
         return $product_reverb_category_objects_array;
     }
 
     static public function compareReverbCategoryLevelDescending($reverbCategoryA, $reverbCategoryB)
     {
-        $category_a_is_subcategory = Reverb_ReverbSync_Helper_Sync_Category::isReverbCategoryASubcategory($reverbCategoryA);
-        $category_b_is_subcategory = Reverb_ReverbSync_Helper_Sync_Category::isReverbCategoryASubcategory($reverbCategoryB);
+        $category_a_is_subcategory = \Reverb\ReverbSync\Helper\Sync\Category::isReverbCategoryASubcategory($reverbCategoryA);
+        $category_b_is_subcategory = \Reverb\ReverbSync\Helper\Sync\Category::isReverbCategoryASubcategory($reverbCategoryB);
 
         return ($category_a_is_subcategory < $category_b_is_subcategory);
     }

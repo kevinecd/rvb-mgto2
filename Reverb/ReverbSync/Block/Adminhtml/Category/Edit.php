@@ -46,7 +46,7 @@ class Edit extends Container
 		
 		//$fetch_categories_route = $this->getAction()->getUriPathForAction('updateCategories');
         //$fetch_categories_url = $this->getUrl($fetch_categories_route);
-        $updateReverbCategoryUrl = $this->getUrl("*/*/updatecategories");
+        $updateReverbCategoryUrl = $this->getUrl("reverbsync/reverbsync_category/Updatecategories");
 
         $this->buttonList->add('fetch_reverb_categories', array(
             'label'     => __('Update Reverb Categories'),
@@ -66,36 +66,5 @@ class Edit extends Container
 	{
 		return __('Sync Reverb Categories');
 	}
-
-   /* public function __construct()
-    {
-        $controllerAction = $this->getAction();
-        //$this->_objectId = $controllerAction->getObjectParamName();
-        $this->_controller = 'adminhtml_category';
-        $this->_blockGroup = $controllerAction->getModuleBlockGroupname();
-
-        $fetch_categories_route = $this->getAction()->getUriPathForAction('updateCategories');
-        $fetch_categories_url = $this->getUrl($fetch_categories_route);
-
-        $this->_addButton('fetch_reverb_categories', array(
-            'label'     => Mage::helper('ReverbSync')->__('Update Reverb Categories'),
-            'onclick'   => 'setLocation(\'' . $fetch_categories_url . '\')'
-        ), -1);
-
-        parent::__construct();
-
-        $this->_removeButton('delete');
-        $this->_removeButton('back');
-    }
-
-    public function getFormActionUrl()
-    {
-        $uri_path = $this->getAction()->getUriPathForAction('save');
-        return $this->getUrl($uri_path);
-    }
-
-    public function getHeaderText()
-    {
-        return Mage::helper('ReverbSync')->__('Sync Reverb Categories');
-    }*/
+   
 }

@@ -1,18 +1,25 @@
 <?php
-
-class Reverb_ReverbSync_Block_Adminhtml_Orders_Unique_Index extends Reverb_ReverbSync_Block_Adminhtml_Orders_Index
+namespace Reverb\ReverbSync\Block\Adminhtml\Orders\Unique;
+class Index extends \Reverb\ReverbSync\Block\Adminhtml\Orders\Index
 {
-    public function __construct()
+    public function __construct(
+        \Magento\Backend\Block\Widget\Context $context,
+        \Reverb\ProcessQueue\Helper\Task\Processor $taskprocessorHelper,
+        \Reverb\ProcessQueue\Helper\Task\Processor\Unique $taskprocessorUniqueHelper,
+        \Magento\Backend\Model\UrlInterface $backendUrl,
+        \Magento\Framework\Stdlib\DateTime\DateTime $datetime,
+        array $data = []
+    )
     {
-        parent::__construct();
+        $this->_backendUrl = $backendUrl;
+        parent::__construct($context, $taskprocessorHelper, $taskprocessorUniqueHelper, $backendUrl, $datetime, $data);
 
-        $this->_removeButton('bulk_orders_sync', 'sync_downloaded_tasks');
+        $this->removeButton('bulk_orders_sync', 'sync_downloaded_tasks');
 
-        $sync_shipment_tracking_action_url = Mage::getModel('adminhtml/url')
-                                                ->getUrl('adminhtml/ReverbSync_orders_sync_unique/syncShipmentTracking');
+        $sync_shipment_tracking_action_url = $this->_backendUrl->getUrl('reverbsync/reverbsync_orders_sync/unique',array('action'=>'syncShipmentTrackingAction'));
 
-        $this->_addButton('sync_shipment_tracking', array(
-                'label' => Mage::helper('ReverbSync')->__('Sync Shipment Tracking Data With Reverb'),
+        $this->addButton('sync_shipment_tracking', array(
+                'label' => __('Sync Shipment Tracking Data With Reverb'),
                 'onclick' => "document.location='" .$sync_shipment_tracking_action_url . "'",
                 'level' => -1
             )
@@ -36,11 +43,11 @@ class Reverb_ReverbSync_Block_Adminhtml_Orders_Unique_Index extends Reverb_Rever
 
     protected function _getTaskCode()
     {
-        return array(Reverb_ReverbSync_Model_Sync_Shipment_Tracking::JOB_CODE);
+        return \Reverb\ReverbSync\Model\Sync\Shipment\Tracking::JOB_CODE;
     }
 
     protected function _getTaskProcessorHelper()
     {
-        return Mage::helper('reverb_process_queue/task_processor_unique');
+        return $this->_getTaskProcessorUniqueHelper();
     }
 }

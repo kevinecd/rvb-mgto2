@@ -1,25 +1,30 @@
 <?php
-/**
- * Author: Sean Dunagan (https://github.com/dunagan5887)
- * Created: 12/9/15
- */
-
-class Reverb_Reports_Model_Cron_Delete_Stale_Successful
+namespace Reverb\Reports\Model\Cron\Delete\Stale;
+class Successful
 {
     const CRON_UNCAUGHT_EXCEPTION = 'Error deleting stale success reports from the Reverb Reports Table: %s';
 
+    private $_reverbLogger;
+
+    private $_reverbreportResource;
+
+    public function __construct(
+        \Reverb\ReverbSync\Model\Log $reverbLogger,
+        \Reverb\Reports\Model\Resource\Reverbreport $reverbreportResource
+    ){
+        $this->_reverbLogger = $reverbLogger;
+        $this->_reverbreportResource = $reverbreportResource;
+    }
     public function deleteStaleSuccessfulReports()
     {
         try
         {
-            Mage::getResourceSingleton('reverb_reports/Reverbreport')->deleteStaleSuccessfulReports();
+            $this->_reverbreportResource->deleteStaleSuccessfulReports();
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $error_message = sprintf(self::CRON_UNCAUGHT_EXCEPTION, $e->getMessage());
-            Mage::log($error_message, null, 'reverb_process_queue_error.log');
-            $exceptionToLog = new Exception($error_message);
-            Mage::logException($exceptionToLog);
+            $this->_reverbLogger->logReverbMessage($message);       
         }
     }
 }

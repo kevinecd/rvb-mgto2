@@ -25,7 +25,7 @@ class File extends \Magento\Framework\Filesystem\Io\File
         $this->_streamHandler = @fopen($fileName, $mode);
         @chdir($this->_iwd);
         if ($this->_streamHandler === false) {
-            throw new Exception('Error write to file ' . $this->getFilteredPath($fileName));
+            throw new \Exception('Error write to file ' . $this->getFilteredPath($fileName));
         }
 
         $this->_streamFileName = $fileName;

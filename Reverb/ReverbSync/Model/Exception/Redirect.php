@@ -1,6 +1,5 @@
 <?php
-
-class Reverb_ReverbSync_Model_Exception_Redirect extends Reverb_ReverbSync_Controller_Varien_Exception
+namespace \Reverb\ReverbSync\Model\Exception;
+class Redirect extends \Exception
 {
-
 }

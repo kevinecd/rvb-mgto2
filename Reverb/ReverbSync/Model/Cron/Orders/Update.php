@@ -24,7 +24,7 @@ class Update extends Cronabstract implements Croninterface
         \Reverb\ReverbSync\Helper\Orders\Retrieval\Update $retrievalUpdate,
         array $data = []
     ) {
-        parent::__construct($getIoAdapter, $data);
+        parent::__construct($getIoAdapter, $dir, $data);
         $this->getIoAdapter = $getIoAdapter;
         $this->_taskprocessor = $taskprocessor;
         $this->_orderSyncHelper = $orderSyncHelper;
@@ -37,6 +37,7 @@ class Update extends Cronabstract implements Croninterface
     {
         try
         {
+            $this->_logError('check Order Update cron is running');
             if (!$this->_orderSyncHelper->isOrderSyncEnabled())
             {
                 return false;

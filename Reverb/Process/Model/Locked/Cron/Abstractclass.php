@@ -36,6 +36,9 @@ abstract class Abstractclass extends Lockedabstract implements Lockedcroninterfa
 
     public function attemptCronExecution()
     {
+        $this->_logError('attemptCronExecution method');
+
+        $this->getCheckCreateLogFile();
         $thread_lock_number = $this->attemptLock();
 
         if ($this->attemptLock())
@@ -44,7 +47,7 @@ abstract class Abstractclass extends Lockedabstract implements Lockedcroninterfa
             {
                 $this->executeCron();
             }
-            catch(Exception $e)
+            catch(\Exception $e)
             {
                 $error_message = sprintf(self::ERROR_EXECUTING_CRON, $this->getCronCode(), $e->getMessage());
                 $this->_logError($error_message);
@@ -54,7 +57,7 @@ abstract class Abstractclass extends Lockedabstract implements Lockedcroninterfa
             {
                 $this->releaseLock();
             }
-            catch(Exception $e)
+            catch(\Exception $e)
             {
                 $error_message = sprintf(self::ERROR_RELEASING_LOCK, $this->getCronCode(), $e->getMessage());
                 $this->_logError($error_message);

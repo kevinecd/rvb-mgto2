@@ -46,7 +46,7 @@ class Form extends Generic
 		\Reverb\ReverbSync\Helper\Data $revrbsyncHelperData,
 		\Magento\Catalog\Model\ResourceModel\Category\CollectionFactory $categoryCollection,
 		\Reverb\ReverbSync\Helper\Sync\Category $revrbsyncCategoryHelper,
-		\Reverb\ReverbSync\Model\Category\Reverb\Magento\Xref $reverbMagentoCategory
+		\Reverb\ReverbSync\Model\Resource\Category\Reverb\Magento\Xref $reverbMagentoCategory
 	) {
 		$this->_reverbsyncHelper = $revrbsyncHelperData;
 		$this->_categoryCollection = $categoryCollection;
@@ -54,7 +54,7 @@ class Form extends Generic
 		$this->_reverbMagentoCategory = $reverbMagentoCategory;
 		parent::__construct($context,$registry,$formFactory);
 	}
-	
+    
 	protected function _prepareForm()
     {
         /** @var \Magento\Framework\Data\Form $form */

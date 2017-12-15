@@ -23,16 +23,20 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
 
     protected $_imageSyncCollection;
 
+    protected $_taskresourceUnique;
+
     public function __construct(
         \Reverb\ProcessQueue\Model\Resource\Taskresource\Unique\Collection $_imageSyncCollection,
         \Reverb\ProcessQueue\Model\Resource\Taskresource\Collection $taskCollection,
         \Reverb\ProcessQueue\Model\Resource\Taskresource $taskresource,
+        \Reverb\ProcessQueue\Model\Resource\Taskresource\Unique $taskresourceUnique,
         \Reverb\ReverbSync\Model\Logger $logger
     ) {
         $this->_taskCollection = $taskCollection;
         $this->_taskresource = $taskresource;
         $this->_imageSyncCollection = $_imageSyncCollection;
         $this->_logger = $logger;
+        $this->_taskresourceUnique = $taskresourceUnique;
     }
 
     // TODO Create separate database connection for queue task resource Singleton
@@ -79,7 +83,7 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
         }
         catch(\Exception $e)
         {
-            $error_message = __(self::EXCEPTION_UPDATE_AS_PROCESSING, $processQueueTaskObject->getId(), $e->getMessage());
+            $error_message = __(sprintf(self::EXCEPTION_UPDATE_AS_PROCESSING, $processQueueTaskObject->getId(), $e->getMessage()));
             $this->_logger->info('file: '.__FILE__.',function = '.__FUNCTION__.', error = '.$error_message);
             return;
         }
@@ -95,7 +99,7 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
             {
                 // Assume another thread has already locked this task object's row, although this shouldn't happen
                 $taskResourceSingleton->rollBack();
-                $error_message = __(self::ERROR_FAILED_TO_SELECT_FOR_UPDATE, $processQueueTaskObject->getId());
+                $error_message = __(sprintf(self::ERROR_FAILED_TO_SELECT_FOR_UPDATE, $processQueueTaskObject->getId()));
                 $this->_logger->info('file: '.__FILE__.',function = '.__FUNCTION__.', error = '.$error_message);
                 return;
             }
@@ -104,7 +108,7 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
         {
             
             $taskResourceSingleton->rollBack();
-            $error_message = __(self::EXCEPTION_SELECT_FOR_UPDATE, $processQueueTaskObject->getId(), $e->getMessage());
+            $error_message = __(sprintf(self::EXCEPTION_SELECT_FOR_UPDATE, $processQueueTaskObject->getId(), $e->getMessage()));
             $this->_logger->info('file: '.__FILE__.',function = '.__FUNCTION__.', error = '.$error_message);
             return;
         }
@@ -116,7 +120,7 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
         catch(\Exception $e)
         {
             $taskResourceSingleton->rollBack();
-            $error_message = __(self::EXCEPTION_EXECUTING_TASK, $processQueueTaskObject->getId(), $e->getMessage());
+            $error_message = __(sprintf(self::EXCEPTION_EXECUTING_TASK, $processQueueTaskObject->getId(), $e->getMessage()));
             $processQueueTaskObject->setTaskAsErrored($error_message);
             $this->_logger->info('file: '.__FILE__.',function = '.__FUNCTION__.', error = '.$error_message);
             return;
@@ -131,7 +135,7 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
             // At this point, we would assume that the task has been performed successfully since executeTask() did not
             //  throw any exceptions. As such, log the exception but commit the transaction. Even if this leaves a row
             //  in the PROCESSING state, it's better than leaving parts of the database out of sync with external resources
-            $error_message = __(self::EXCEPTION_ACTING_ON_TASK_RESULT, $processQueueTaskObject->getId(), $e->getMessage());
+            $error_message = __(sprintf(self::EXCEPTION_ACTING_ON_TASK_RESULT, $processQueueTaskObject->getId(), $e->getMessage()));
             $this->_logger->info('file: '.__FILE__.',function = '.__FUNCTION__.', error = '.$error_message);
         }
 
@@ -144,7 +148,7 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
             // If an exception occurs here, rollback
             $taskResourceSingleton->rollback();
             $processQueueTaskObject->setTaskAsErrored();
-            $error_message = __(self::EXCEPTION_COMMITTING_TRANSACTION, $processQueueTaskObject->getId(), $e->getMessage());
+            $error_message = __(sprintf(self::EXCEPTION_COMMITTING_TRANSACTION, $processQueueTaskObject->getId(), $e->getMessage()));
             $this->_logger->info('file: '.__FILE__.',function = '.__FUNCTION__.', error = '.$error_message);
         }
     }
@@ -223,21 +227,39 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
-    public function deleteAllTasks($task_codes)
+    public function deleteAllTasks($task_codes, $type="")
     {
-        $rows_deleted = $this->_getTaskResourceSingleton()->deleteAllTasks($task_codes);
-        return $rows_deleted;
+        if($type =="listing_image_sync" || $type=="shipment_tracking_sync"){
+            $rows_deleted = $this->_getTaskResourceUnique()->deleteAllTasks($task_codes);
+            return $rows_deleted;
+        } else if($type == "order_update"){
+            $rows_deleted = $this->_getTaskResourceSingleton()->deleteAllTasks($task_codes);
+            return $rows_deleted;
+        } else {
+            $rows_deleted = $this->_getTaskResourceSingleton()->deleteAllTasks($task_codes);
+            return $rows_deleted;
+        }
     }
 
-    public function deleteSuccessfulTasks($task_codes)
+    public function deleteSuccessfulTasks($task_codes, $type="")
     {
-        $rows_deleted = $this->_getTaskResourceSingleton()->deleteSuccessfulTasks($task_codes);
-        return $rows_deleted;
+        if($type=="listing_image_sync" || $type=="shipment_tracking_sync"){
+            $rows_deleted = $this->_getTaskResourceUnique()->deleteSuccessfulTasks($task_codes);
+            return $rows_deleted;
+        } else if($type=="order_update"){
+            $rows_deleted = $this->_getTaskResourceSingleton()->deleteSuccessfulTasks($task_codes);
+            return $rows_deleted;
+        } else {
+            $rows_deleted = $this->_getTaskResourceSingleton()->deleteSuccessfulTasks($task_codes);
+            return $rows_deleted;
+        }
     }
 
     protected function _gettaskCollectionModel($code=null)
     {
         if(!empty($code) && $code=='listing_image_sync'){
+            return $this->_imageSyncCollection;
+        } else if(!empty($code) && $code=='shipment_tracking_sync'){
             return $this->_imageSyncCollection;
         } else {
             return $this->_taskCollection;
@@ -255,5 +277,9 @@ class Processor extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         return $this->_taskResourceSingleton;
+    }
+
+    public function _getTaskResourceUnique(){
+        return $this->_taskresourceUnique;
     }
 }

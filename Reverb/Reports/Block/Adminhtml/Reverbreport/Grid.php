@@ -198,10 +198,7 @@ class Grid extends \Magento\Backend\Block\Widget\Grid\Extended{
         return parent::_prepareColumns();
     }
 
-    /**
-     * @return string
-     */
     public function getGridUrl(){
-            return $this->getUrl('*/*/ajaxGrid', array('_current'=>true));
+            return $this->getUrl('*/*/reverbajaxGrid', array('_current'=>true));
     }
 }

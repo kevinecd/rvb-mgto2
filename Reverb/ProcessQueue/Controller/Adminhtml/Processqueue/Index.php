@@ -33,20 +33,42 @@ class Index extends \Magento\Backend\App\Action
     protected $_modelTaskUnique;
 
     protected $_processqueueTaskProcessor;
-    
+
     public function __construct(Context $context, PageFactory $resultPageFactory,
-        \Reverb\ProcessQueue\Model\Task\Unique $modelTaskUnique, \Reverb\ProcessQueue\Helper\Task\Processor $taskProcessor
+        \Reverb\ProcessQueue\Model\Task\Unique $modelTaskUnique, \Reverb\ProcessQueue\Helper\Task\Processor $taskProcessor,
+            \Reverb\ReverbSync\Helper\Admin $adminhelper
         ) {
         parent::__construct($context);
         $this->_modelTaskUnique = $modelTaskUnique;
         $this->resultPageFactory = $resultPageFactory;
         $this->_processqueueTaskProcessor = $taskProcessor;
+        $this->_adminHelper = $adminhelper;
     }
 
     public function execute(){
+        $task_code = $this->getRequest()->getParam('task_codes', null);
+        $action = $this->getRequest()->getParam('type', null);
+        if($action=='clearSuccessfulTasksAction'){
+            $this->clearSuccessfulTasksAction();
+        } else if($action=='clearAllTasksAction'){
+            $this->clearAllTasksAction();
+        }
+        
+        $redirecturl = 'reverbsync/reverbsync_listings/imagesync'; 
+        if($task_code=="listing_image_sync"){
+            $redirecturl = 'reverbsync/reverbsync_listings/imagesync'; 
+        } else if($task_code=="order_update"){
+            $redirecturl = 'reverbsync/reverbsync_orders/sync'; 
+        } else if($task_code=='shipment_tracking_sync'){
+            $redirecturl = 'reverbsync/reverbsync_orders_sync/unique';
+        }
+        
+        $resultRedirect = $this->resultRedirectFactory->create();
+        $resultRedirect->setPath($redirecturl);
+        return $resultRedirect;
         
     }
-
+    
     public function validateDataAndCreateObject($objectToCreate, $posted_object_data)
     {
         $objectToCreate->setLastExecutedAt(null);
@@ -68,55 +90,62 @@ class Index extends \Magento\Backend\App\Action
     public function clearAllTasksAction()
     {
         $task_codes = $this->_getTaskCodesParam();
+        $task_code = $this->getRequest()->getParam('task_codes', null);
         try
         {
-            $rows_deleted = $this->_getTaskProcessor()->deleteAllTasks($task_codes);
+            $rows_deleted = $this->_getTaskProcessor()->deleteAllTasks($task_codes,$task_code);
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $task_codes_string = implode(', ', $task_codes);
-            $error_message = $this->__(self::ERROR_CLEARING_ALL_TASKS, $task_codes_string, $e->getMessage());
-            $this->_getAdminHelper()->throwRedirectException($error_message);
+            $error_message = __(sprintf(self::ERROR_CLEARING_ALL_TASKS, $task_codes_string, $e->getMessage()));
+            $this->_adminHelper->addAdminErrorMessage($error_message);
+            $redirecturl = 'reverbsync/reverbsync_listings/imagesync'; 
+            $resultRedirect = $this->resultRedirectFactory->create();
+            $resultRedirect->setPath($redirecturl);
+            return $resultRedirect;
         }
 
         if (!empty($task_code))
         {
-            $success_message = $this->__(self::SUCCESS_CLEARED_ALL_TASKS_WITH_CODE, $task_code);
+            $success_message = __(sprintf(self::SUCCESS_CLEARED_ALL_TASKS_WITH_CODE, $task_code));
         }
         else
         {
-            $success_message = $this->__(self::SUCCESS_CLEARED_ALL_TASKS);
+            $success_message = __(self::SUCCESS_CLEARED_ALL_TASKS);
         }
-
-        $this->_getAdminHelper()->addAdminSuccessMessage($success_message);
-        $this->_redirect('*/*/index');
+        $this->_adminHelper->addAdminSuccessMessage($success_message);
     }
 
     public function clearSuccessfulTasksAction()
     {
         $task_codes = $this->_getTaskCodesParam();
+        $task_code = $this->getRequest()->getParam('task_codes', null);
         try
         {
-            $rows_deleted = $this->_getTaskProcessor()->deleteSuccessfulTasks($task_codes);
+            $rows_deleted = $this->_getTaskProcessor()->deleteSuccessfulTasks($task_codes, $task_code);
         }
-        catch(Exception $e)
+        catch(\Exception $e)
         {
             $task_codes_string = implode(', ', $task_codes);
-            $error_message = $this->__(self::ERROR_CLEARING_SUCCESSFUL_TASKS, $task_codes_string, $e->getMessage());
-            $this->_getAdminHelper()->throwRedirectException($error_message);
+            $error_message = __(sprintf(self::ERROR_CLEARING_SUCCESSFUL_TASKS, $task_codes_string, $e->getMessage()));
+            $this->_adminHelper->addAdminErrorMessage($error_message);
+            $redirecturl = 'reverbsync/reverbsync_listings/imagesync'; 
+            $resultRedirect = $this->resultRedirectFactory->create();
+            $resultRedirect->setPath($redirecturl);
+            return $resultRedirect;
         }
 
         if (!empty($task_code))
         {
-            $success_message = $this->__(self::SUCCESS_CLEARED_SUCCESSFUL_TASKS_WITH_CODE, $task_code);
+            $success_message = __(sprintf(self::SUCCESS_CLEARED_SUCCESSFUL_TASKS_WITH_CODE, $task_code));
         }
         else
         {
-            $success_message = $this->__(self::SUCCESS_CLEARED_SUCCESSFUL_TASKS);
+            $success_message = __(self::SUCCESS_CLEARED_SUCCESSFUL_TASKS);
         }
 
-        $this->_getAdminHelper()->addAdminSuccessMessage($success_message);
-        $this->_redirect('*/*/index');
+        $this->_adminHelper->addAdminSuccessMessage($success_message);
     }
 
     /**

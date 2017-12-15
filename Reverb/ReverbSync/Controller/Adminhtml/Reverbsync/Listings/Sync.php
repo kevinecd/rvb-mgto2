@@ -1,18 +1,9 @@
 <?php
-
-/**
- *
- * @category    Reverb
- * @package     Reverb_ReverbSync
- * @author      Sean Dunagan
- * @author      Timur Zaynullin <zztimur@gmail.com>
- */
-
 namespace Reverb\ReverbSync\Controller\Adminhtml\ReverbSync\Listings;
 
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\View\Result\PageFactory;
-
+use Magento\Framework\Controller\ResultFactory; 
 class Sync extends \Magento\Backend\App\Action{
 
     const BULK_SYNC_EXCEPTION = 'Error executing the Reverb Bulk Product Sync via the admin panel: %s';
@@ -31,11 +22,32 @@ class Sync extends \Magento\Backend\App\Action{
      * @var PageFactory
      */
     protected $resultPageFactory;
+
+    protected $_taskResource;
+
+    protected $_reverbReportResource;
+
+    protected $_backendUrl;
+
+    protected $resultRedirect;
+
+    protected $_syncProductHelper;
     
-    public function __construct(Context $context, PageFactory $resultPageFactory) {
+    public function __construct(Context $context, PageFactory $resultPageFactory,
+        \Reverb\ProcessQueue\Model\Resource\Taskresource $taskResource,
+        \Reverb\Reports\Model\Resource\Reverbreport $reverbreportResource,
+        \Reverb\ReverbSync\Helper\Admin $adminHelper,
+        \Magento\Backend\Model\UrlInterface $backendUrl,
+        \Reverb\ReverbSync\Helper\Sync\Product $syncProductHelper
+    ) {
         parent::__construct($context);
+        $this->_taskResource = $taskResource;
         $this->_request = $context->getRequest();
         $this->resultPageFactory = $resultPageFactory;
+        $this->_reverbReportResource = $reverbreportResource;
+        $this->_adminHelper = $adminHelper;
+        $this->_backendUrl = $backendUrl;
+        $this->_syncProductHelper = $syncProductHelper;
     }
     public function execute(){
         $action = $this->_request->getParam('action');
@@ -46,21 +58,23 @@ class Sync extends \Magento\Backend\App\Action{
         } else if($action=='stopBulkSync'){
             $this->stopBulkSyncAction();
         }
-        /*$resultPage = $this->resultPageFactory->create();
-        $resultPage->setActiveMenu('Reverb_ReverbSync::reverb_listings_sync');
-        $resultPage->getConfig()->getTitle()->prepend((__('Reverb Listing Sync')));
-        return $resultPage;*/
+        $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
+        $resultRedirect->setUrl($this->_redirect->getRefererUrl());
+        return $resultRedirect;
     }
 
+    public function getRedirectUrl(){
+        return $this->_backendUrl->getUrl('admin/reports/reverbreport');
+    }
 
     public function bulkSyncAction()
     {
         try
         {
-            Mage::helper('ReverbSync/sync_product')->deleteAllListingSyncTasks();
-            $number_of_syncs_queued_up = Mage::helper('ReverbSync/sync_product')->queueUpBulkProductDataSync();
+            $this->_syncProductHelper->deleteAllListingSyncTasks();
+            $number_of_syncs_queued_up = $this->_syncProductHelper->queueUpBulkProductDataSync();
         }
-        catch(Reverb_ReverbSync_Model_Exception_Redirect $redirectException)
+        catch(\Reverb\ReverbSync\Model\Exception\Redirect $redirectException)
         {
             // Error message should already have been logged and redirect should already have been set in
             // Reverb_ReverbSync_Helper_Admin::throwRedirectException(). Throw the exception again
@@ -71,21 +85,23 @@ class Sync extends \Magento\Backend\App\Action{
         {
             // We don't know what caused this exception. Log it and throw redirect exception
             $error_message = __(sprintf(self::BULK_SYNC_EXCEPTION, $e->getMessage()));
-            $this->_getAdminHelper()->throwRedirectException($error_message, $this->_getRedirectPath());
+            $this->_adminHelper->addAdminErrorMessage($error_message);
+            $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
+            $resultRedirect->setUrl($this->_redirect->getRefererUrl());
+            return $resultRedirect;
         }
 
         $success_message = __(sprintf(self::SUCCESS_BULK_SYNC_QUEUED_UP, $number_of_syncs_queued_up));
-        $this->_getAdminHelper()->addAdminSuccessMessage($success_message);
-        $this->_redirect($this->_getRedirectPath());
+        $this->_adminHelper->addAdminSuccessMessage($success_message);
     }
 
     public function stopBulkSyncAction()
     {
         try
         {
-            $rows_deleted = Mage::helper('ReverbSync/sync_product')->deleteAllListingSyncTasks();
+            $rows_deleted = $this->_syncProductHelper->deleteAllListingSyncTasks();
         }
-        catch(Reverb_ReverbSync_Model_Exception_Redirect $redirectException)
+        catch(\Reverb\ReverbSync\Model\Exception\Redirect $redirectException)
         {
             // Error message should already have been logged and redirect should already have been set in
             // Reverb_ReverbSync_Helper_Admin::throwRedirectException(). Throw the exception again
@@ -96,49 +112,54 @@ class Sync extends \Magento\Backend\App\Action{
         {
             // We don't know what caused this exception. Log it and throw redirect exception
             $error_message = __(sprintf(self::EXCEPTION_STOP_BULK_SYNC, $e->getMessage()));
-            $this->_getAdminHelper()->throwRedirectException($error_message, $this->_getRedirectPath());
+            $this->_adminHelper->addAdminErrorMessage($error_message);
+            $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
+            $resultRedirect->setUrl($this->_redirect->getRefererUrl());
+            return $resultRedirect;
         }
 
         $success_message = __(sprintf(self::SUCCESS_STOPPED_LISTING_SYNCS));
-        $this->_getAdminHelper()->addAdminSuccessMessage($success_message);
-        $this->_redirect($this->_getRedirectPath());
+        $this->_adminHelper->addAdminSuccessMessage($success_message);
     }
 
     public function clearAllTasksAction()
     {
         try
         {
-            $listing_sync_rows_deleted = Mage::helper('ReverbSync/sync_product')->deleteAllListingSyncTasks();
-            $reverb_report_rows_deleted = Mage::helper('ReverbSync/sync_product')->deleteAllReverbReportRows();
+            $listing_sync_rows_deleted = $this->_syncProductHelper->deleteAllListingSyncTasks();
+            $reverb_report_rows_deleted = $this->_syncProductHelper->deleteAllReverbReportRows();
         }
         catch(\Exception $e)
         {
             $error_message = __(sprintf(self::EXCEPTION_CLEARING_ALL_LISTING_TASKS, $e->getMessage()));
-            $this->_getAdminHelper()->throwRedirectException($error_message, $this->_getRedirectPath());
+            $this->_adminHelper->addAdminErrorMessage($error_message);
+            $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
+            $resultRedirect->setUrl($this->_redirect->getRefererUrl());
+            return $resultRedirect;
         }
 
         $success_message = __(sprintf(self::SUCCESS_CLEAR_LISTING_SYNCS));
-        $this->_getAdminHelper()->addAdminSuccessMessage($success_message);
-        $this->_redirect($this->_getRedirectPath());
+        $this->_adminHelper->addAdminSuccessMessage($success_message);
     }
 
     public function clearSuccessfulTasksAction()
     {
         try
         {
-            $listing_tasks_deleted = Mage::getResourceSingleton('reverbSync/task_listing')->deleteSuccessfulTasks();
-            $reverb_report_rows_deleted = Mage::getResourceSingleton('reverb_reports/reverbreport')
-                                            ->deleteSuccessfulSyncs();
+            $listing_tasks_deleted = $this->_taskResource->deleteSuccessfulTasks();
+            $reverb_report_rows_deleted = $this->_reverbReportResource->deleteSuccessfulSyncs();
         }
         catch(\Exception $e)
         {
             $error_message = __(sprintf(self::ERROR_CLEARING_SUCCESSFUL_SYNC, $e->getMessage()));
-            $this->_getAdminHelper()->throwRedirectException($error_message, $this->_getRedirectPath());
+            $this->_adminHelper->addAdminErrorMessage($error_message);
+            $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
+            $resultRedirect->setUrl($this->_redirect->getRefererUrl());
+            return $resultRedirect;
         }
 
         $success_message = __(sprintf(self::SUCCESS_CLEAR_SUCCESSFUL_LISTING_SYNCS));
-        $this->_getAdminHelper()->addAdminSuccessMessage($success_message);
-        $this->_redirect($this->_getRedirectPath());
+        $this->_adminHelper->addAdminSuccessMessage($success_message);
     }
 
     public function getBlockToShow()
