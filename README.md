@@ -56,18 +56,29 @@ Please follow the instructions below to download and install the app. This assum
 
 **Command Line instructions below require update pending home repo.**
 
+*Note: When running commands in Magento2 please make sure you are located in the magento directory and logged in as the magento user* 
 ```bash
 # Navigate to your magento root folder
 cd /path/to/magento
 
 # Download the release
-cd /tmp && wget https://github.com/reverbdotcom/magento/archive/0.9.8.tar.gz //this will depend on where the repo lives
+cd /tmp && wget https://github.com/reverbdotcom/magento2/archive/Reverb.tar.gz //this will depend on where the repo lives and what you name it
 
 # Unzip the release
-tar zxvf 0.9.8.tar.gz //this will depend on repo name
+tar zxvf Reverb.tar.gz //this will depend on repo name
 
 # Copy everything from the app folder into your magento app
-rsync -avzp magento-0.9.8/* /path/to/magento/app/code/
+rsync -avzp Reverb/* /path/to/magento/app/code/
+
+# Enable All Reverb Modules
+php bin/magento module:enable Reverb_Base
+php bin/magento module:enable Reverb_Io
+php bin/magento module:enable Reverb_Payment
+php bin/magento module:enable Reverb_Process
+php bin/magento module:enable Reverb_ProcessQueue
+php bin/magento module:enable Reverb_Reports
+php bin/magento module:enable Reverb_ReverbSync
+php bin/magento module:enable Reverb_Shipping
 
 # Update Magento 2 databse
 php bin/magento setup:upgrade
